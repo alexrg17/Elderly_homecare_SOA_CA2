@@ -27,11 +27,11 @@ public class UsersController : ControllerBase
     /// </summary>
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<UserDto>>> GetAll()
+    [ProducesResponseType(typeof(IEnumerable<UserResponseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAll()
     {
         var users = await _userRepository.GetAllAsync();
-        var userDtos = users.Select(u => new UserDto(
+        var userDtos = users.Select(u => new UserResponseDto(
             u.Id,
             u.Username,
             u.FullName,
@@ -48,16 +48,16 @@ public class UsersController : ControllerBase
     /// Get user by ID
     /// </summary>
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserDto>> GetById(int id)
+    public async Task<ActionResult<UserResponseDto>> GetById(int id)
     {
         var user = await _userRepository.GetByIdAsync(id);
         
         if (user == null)
             return NotFound(new { message = "User not found" });
         
-        var userDto = new UserDto(
+        var userDto = new UserResponseDto(
             user.Id,
             user.Username,
             user.FullName,
@@ -74,9 +74,9 @@ public class UsersController : ControllerBase
     /// Update user (Admin or own profile)
     /// </summary>
     [HttpPut("{id}")]
-    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserDto>> Update(int id, [FromBody] UpdateUserDto updateDto)
+    public async Task<ActionResult<UserResponseDto>> Update(int id, [FromBody] UpdateUserDto updateDto)
     {
         var existing = await _userRepository.GetByIdAsync(id);
         
@@ -94,7 +94,7 @@ public class UsersController : ControllerBase
         if (updated == null)
             return NotFound(new { message = "User not found" });
         
-        var userDto = new UserDto(
+        var userDto = new UserResponseDto(
             updated.Id,
             updated.Username,
             updated.FullName,

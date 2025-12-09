@@ -32,7 +32,7 @@ public class AuthService
         
         var token = _jwtService.GenerateToken(user);
         
-        var userDto = new UserDto(
+        var userDto = new UserResponseDto(
             user.Id,
             user.Username,
             user.FullName,
