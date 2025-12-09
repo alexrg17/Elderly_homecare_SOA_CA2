@@ -1,6 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# 
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CA2_SOA", "CA2_SOA\CA2_SOA.csproj", "{686E9737-FBDF-477C-BF78-9D8CAC6279FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CA2_SOA.Tests", "CA2_SOA.Tests\CA2_SOA.Tests.csproj", "{002CEFCE-D8E2-4A8D-AA90-710CCCE8A015}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,5 +15,9 @@ Global
 		{686E9737-FBDF-477C-BF78-9D8CAC6279FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{686E9737-FBDF-477C-BF78-9D8CAC6279FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{686E9737-FBDF-477C-BF78-9D8CAC6279FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{002CEFCE-D8E2-4A8D-AA90-710CCCE8A015}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{002CEFCE-D8E2-4A8D-AA90-710CCCE8A015}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{002CEFCE-D8E2-4A8D-AA90-710CCCE8A015}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{002CEFCE-D8E2-4A8D-AA90-710CCCE8A015}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
