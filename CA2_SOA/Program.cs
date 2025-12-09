@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add Database Context
 builder.Services.AddDbContext<CareHomeDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add Controllers
 builder.Services.AddControllers();
@@ -111,15 +111,13 @@ builder.Services.AddSwaggerGen(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
+// Enable Swagger in all environments for easy testing and demonstration
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Care Home API v1");
-        options.RoutePrefix = string.Empty; // Swagger UI at root
-    });
-}
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Care Home API v1");
+    options.RoutePrefix = string.Empty; // Swagger UI at root
+});
 
 // Initialize Database
 using (var scope = app.Services.CreateScope())
