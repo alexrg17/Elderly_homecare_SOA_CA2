@@ -1,239 +1,239 @@
+
 using Microsoft.AspNetCore.Authorization;
-}
-    }
-        return NoContent();
-        
-            return NotFound(new { message = "Resident not found" });
-        if (!success)
-        
-        var success = await _residentRepository.DeleteAsync(id);
-    {
-    public async Task<IActionResult> Delete(int id)
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [Authorize(Roles = "Admin")]
-    [HttpDelete("{id}")]
-    /// </summary>
-    /// Delete resident (Admin only)
-    /// <summary>
-    
-    }
-        return Ok(residentDto);
-        
-        );
-            updated.Room?.RoomNumber
-            updated.RoomId,
-            updated.IsActive,
-            updated.AdmissionDate,
-            updated.EmergencyPhone,
-            updated.EmergencyContact,
-            updated.MedicalConditions,
-            DateTime.Now.Year - updated.DateOfBirth.Year,
-            updated.DateOfBirth,
-            updated.LastName,
-            updated.FirstName,
-            updated.Id,
-        var residentDto = new ResidentDto(
-        
-            return NotFound(new { message = "Resident not found" });
-        if (updated == null)
-        
-        var updated = await _residentRepository.UpdateAsync(id, existing);
-        
-        if (updateDto.RoomId.HasValue) existing.RoomId = updateDto.RoomId.Value;
-        if (updateDto.IsActive.HasValue) existing.IsActive = updateDto.IsActive.Value;
-        if (updateDto.EmergencyPhone != null) existing.EmergencyPhone = updateDto.EmergencyPhone;
-        if (updateDto.EmergencyContact != null) existing.EmergencyContact = updateDto.EmergencyContact;
-        if (updateDto.MedicalConditions != null) existing.MedicalConditions = updateDto.MedicalConditions;
-        if (updateDto.DateOfBirth.HasValue) existing.DateOfBirth = updateDto.DateOfBirth.Value;
-        if (updateDto.LastName != null) existing.LastName = updateDto.LastName;
-        if (updateDto.FirstName != null) existing.FirstName = updateDto.FirstName;
-        // Update only provided fields
-        
-            return NotFound(new { message = "Resident not found" });
-        if (existing == null)
-        
-        var existing = await _residentRepository.GetByIdAsync(id);
-    {
-    public async Task<ActionResult<ResidentDto>> Update(int id, [FromBody] UpdateResidentDto updateDto)
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ResidentDto), StatusCodes.Status200OK)]
-    [Authorize(Roles = "Admin,Caretaker")]
-    [HttpPut("{id}")]
-    /// </summary>
-    /// Update resident
-    /// <summary>
-    
-    }
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, residentDto);
-        
-        );
-            null
-            created.RoomId,
-            created.IsActive,
-            created.AdmissionDate,
-            created.EmergencyPhone,
-            created.EmergencyContact,
-            created.MedicalConditions,
-            DateTime.Now.Year - created.DateOfBirth.Year,
-            created.DateOfBirth,
-            created.LastName,
-            created.FirstName,
-            created.Id,
-        var residentDto = new ResidentDto(
-        
-        var created = await _residentRepository.CreateAsync(resident);
-        
-        };
-            IsActive = true
-            AdmissionDate = DateTime.UtcNow,
-            RoomId = createDto.RoomId,
-            EmergencyPhone = createDto.EmergencyPhone,
-            EmergencyContact = createDto.EmergencyContact,
-            MedicalConditions = createDto.MedicalConditions,
-            DateOfBirth = createDto.DateOfBirth,
-            LastName = createDto.LastName,
-            FirstName = createDto.FirstName,
-        {
-        var resident = new Resident
-    {
-    public async Task<ActionResult<ResidentDto>> Create([FromBody] CreateResidentDto createDto)
-    [ProducesResponseType(typeof(ResidentDto), StatusCodes.Status201Created)]
-    [Authorize(Roles = "Admin,Caretaker")]
-    [HttpPost]
-    /// </summary>
-    /// Create a new resident
-    /// <summary>
-    
-    }
-        return Ok(residentDtos);
-        
-        ));
-            r.Room?.RoomNumber
-            r.RoomId,
-            r.IsActive,
-            r.AdmissionDate,
-            r.EmergencyPhone,
-            r.EmergencyContact,
-            r.MedicalConditions,
-            DateTime.Now.Year - r.DateOfBirth.Year,
-            r.DateOfBirth,
-            r.LastName,
-            r.FirstName,
-            r.Id,
-        var residentDtos = residents.Select(r => new ResidentDto(
-        var residents = await _residentRepository.GetResidentsByRoomAsync(roomId);
-    {
-    public async Task<ActionResult<IEnumerable<ResidentDto>>> GetByRoom(int roomId)
-    [ProducesResponseType(typeof(IEnumerable<ResidentDto>), StatusCodes.Status200OK)]
-    [HttpGet("room/{roomId}")]
-    /// </summary>
-    /// Get residents by room ID
-    /// <summary>
-    
-    }
-        return Ok(residentDto);
-        
-        );
-            resident.Room?.RoomNumber
-            resident.RoomId,
-            resident.IsActive,
-            resident.AdmissionDate,
-            resident.EmergencyPhone,
-            resident.EmergencyContact,
-            resident.MedicalConditions,
-            DateTime.Now.Year - resident.DateOfBirth.Year,
-            resident.DateOfBirth,
-            resident.LastName,
-            resident.FirstName,
-            resident.Id,
-        var residentDto = new ResidentDto(
-        
-            return NotFound(new { message = "Resident not found" });
-        if (resident == null)
-        
-        var resident = await _residentRepository.GetByIdAsync(id);
-    {
-    public async Task<ActionResult<ResidentDto>> GetById(int id)
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ResidentDto), StatusCodes.Status200OK)]
-    [HttpGet("{id}")]
-    /// </summary>
-    /// Get resident by ID
-    /// <summary>
-    
-    }
-        return Ok(residentDtos);
-        
-        ));
-            r.Room?.RoomNumber
-            r.RoomId,
-            r.IsActive,
-            r.AdmissionDate,
-            r.EmergencyPhone,
-            r.EmergencyContact,
-            r.MedicalConditions,
-            DateTime.Now.Year - r.DateOfBirth.Year,
-            r.DateOfBirth,
-            r.LastName,
-            r.FirstName,
-            r.Id,
-        var residentDtos = residents.Select(r => new ResidentDto(
-        var residents = await _residentRepository.GetActiveResidentsAsync();
-    {
-    public async Task<ActionResult<IEnumerable<ResidentDto>>> GetActive()
-    [ProducesResponseType(typeof(IEnumerable<ResidentDto>), StatusCodes.Status200OK)]
-    [HttpGet("active")]
-    /// </summary>
-    /// Get active residents only
-    /// <summary>
-    
-    }
-        return Ok(residentDtos);
-        
-        ));
-            r.Room?.RoomNumber
-            r.RoomId,
-            r.IsActive,
-            r.AdmissionDate,
-            r.EmergencyPhone,
-            r.EmergencyContact,
-            r.MedicalConditions,
-            DateTime.Now.Year - r.DateOfBirth.Year,
-            r.DateOfBirth,
-            r.LastName,
-            r.FirstName,
-            r.Id,
-        var residentDtos = residents.Select(r => new ResidentDto(
-        var residents = await _residentRepository.GetAllAsync();
-    {
-    public async Task<ActionResult<IEnumerable<ResidentDto>>> GetAll()
-    [ProducesResponseType(typeof(IEnumerable<ResidentDto>), StatusCodes.Status200OK)]
-    [HttpGet]
-    /// </summary>
-    /// Get all residents
-    /// <summary>
-    
-    }
-        _residentRepository = residentRepository;
-    {
-    public ResidentsController(IResidentRepository residentRepository)
-    
-    private readonly IResidentRepository _residentRepository;
-{
-public class ResidentsController : ControllerBase
-[Authorize]
-[Route("api/[controller]")]
-[ApiController]
-/// </summary>
-/// Manages elderly residents in the care home
-/// Controller for Resident CRUD operations
-/// <summary>
+using Microsoft.AspNetCore.Mvc;
+using CA2_SOA.DTOs;
+using CA2_SOA.Interfaces;
+using CA2_SOA.Models;
 
 namespace CA2_SOA.Controllers;
 
-using CA2_SOA.Models;
-using CA2_SOA.Interfaces;
-using CA2_SOA.DTOs;
-using Microsoft.AspNetCore.Mvc;
-
+/// <summary>
+/// Controller for Resident CRUD operations
+/// Manages elderly residents in the care home
+/// </summary>
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class ResidentsController : ControllerBase
+{
+    private readonly IResidentRepository _residentRepository;
+    
+    public ResidentsController(IResidentRepository residentRepository)
+    {
+        _residentRepository = residentRepository;
+    }
+    
+    /// <summary>
+    /// Get all residents
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<ResidentDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<ResidentDto>>> GetAll()
+    {
+        var residents = await _residentRepository.GetAllAsync();
+        var residentDtos = residents.Select(r => new ResidentDto(
+            r.Id,
+            r.FirstName,
+            r.LastName,
+            r.DateOfBirth,
+            DateTime.Now.Year - r.DateOfBirth.Year,
+            r.MedicalConditions,
+            r.EmergencyContact,
+            r.EmergencyPhone,
+            r.AdmissionDate,
+            r.IsActive,
+            r.RoomId,
+            r.Room?.RoomNumber
+        ));
+        
+        return Ok(residentDtos);
+    }
+    
+    /// <summary>
+    /// Get active residents only
+    /// </summary>
+    [HttpGet("active")]
+    [ProducesResponseType(typeof(IEnumerable<ResidentDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<ResidentDto>>> GetActive()
+    {
+        var residents = await _residentRepository.GetActiveResidentsAsync();
+        var residentDtos = residents.Select(r => new ResidentDto(
+            r.Id,
+            r.FirstName,
+            r.LastName,
+            r.DateOfBirth,
+            DateTime.Now.Year - r.DateOfBirth.Year,
+            r.MedicalConditions,
+            r.EmergencyContact,
+            r.EmergencyPhone,
+            r.AdmissionDate,
+            r.IsActive,
+            r.RoomId,
+            r.Room?.RoomNumber
+        ));
+        
+        return Ok(residentDtos);
+    }
+    
+    /// <summary>
+    /// Get resident by ID
+    /// </summary>
+    [HttpGet("{id}")]
+    [ProducesResponseType(typeof(ResidentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ResidentDto>> GetById(int id)
+    {
+        var resident = await _residentRepository.GetByIdAsync(id);
+        
+        if (resident == null)
+            return NotFound(new { message = "Resident not found" });
+        
+        var residentDto = new ResidentDto(
+            resident.Id,
+            resident.FirstName,
+            resident.LastName,
+            resident.DateOfBirth,
+            DateTime.Now.Year - resident.DateOfBirth.Year,
+            resident.MedicalConditions,
+            resident.EmergencyContact,
+            resident.EmergencyPhone,
+            resident.AdmissionDate,
+            resident.IsActive,
+            resident.RoomId,
+            resident.Room?.RoomNumber
+        );
+        
+        return Ok(residentDto);
+    }
+    
+    /// <summary>
+    /// Get residents by room ID
+    /// </summary>
+    [HttpGet("room/{roomId}")]
+    [ProducesResponseType(typeof(IEnumerable<ResidentDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<ResidentDto>>> GetByRoom(int roomId)
+    {
+        var residents = await _residentRepository.GetResidentsByRoomAsync(roomId);
+        var residentDtos = residents.Select(r => new ResidentDto(
+            r.Id,
+            r.FirstName,
+            r.LastName,
+            r.DateOfBirth,
+            DateTime.Now.Year - r.DateOfBirth.Year,
+            r.MedicalConditions,
+            r.EmergencyContact,
+            r.EmergencyPhone,
+            r.AdmissionDate,
+            r.IsActive,
+            r.RoomId,
+            r.Room?.RoomNumber
+        ));
+        
+        return Ok(residentDtos);
+    }
+    
+    /// <summary>
+    /// Create a new resident
+    /// </summary>
+    [HttpPost]
+    [Authorize(Roles = "Admin,Caretaker")]
+    [ProducesResponseType(typeof(ResidentDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<ResidentDto>> Create([FromBody] CreateResidentDto createDto)
+    {
+        var resident = new Resident
+        {
+            FirstName = createDto.FirstName,
+            LastName = createDto.LastName,
+            DateOfBirth = createDto.DateOfBirth,
+            MedicalConditions = createDto.MedicalConditions,
+            EmergencyContact = createDto.EmergencyContact,
+            EmergencyPhone = createDto.EmergencyPhone,
+            RoomId = createDto.RoomId,
+            AdmissionDate = DateTime.UtcNow,
+            IsActive = true
+        };
+        
+        var created = await _residentRepository.CreateAsync(resident);
+        
+        var residentDto = new ResidentDto(
+            created.Id,
+            created.FirstName,
+            created.LastName,
+            created.DateOfBirth,
+            DateTime.Now.Year - created.DateOfBirth.Year,
+            created.MedicalConditions,
+            created.EmergencyContact,
+            created.EmergencyPhone,
+            created.AdmissionDate,
+            created.IsActive,
+            created.RoomId,
+            null
+        );
+        
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, residentDto);
+    }
+    
+    /// <summary>
+    /// Update resident
+    /// </summary>
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Caretaker")]
+    [ProducesResponseType(typeof(ResidentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ResidentDto>> Update(int id, [FromBody] UpdateResidentDto updateDto)
+    {
+        var existing = await _residentRepository.GetByIdAsync(id);
+        
+        if (existing == null)
+            return NotFound(new { message = "Resident not found" });
+        
+        // Update only provided fields
+        if (updateDto.FirstName != null) existing.FirstName = updateDto.FirstName;
+        if (updateDto.LastName != null) existing.LastName = updateDto.LastName;
+        if (updateDto.DateOfBirth.HasValue) existing.DateOfBirth = updateDto.DateOfBirth.Value;
+        if (updateDto.MedicalConditions != null) existing.MedicalConditions = updateDto.MedicalConditions;
+        if (updateDto.EmergencyContact != null) existing.EmergencyContact = updateDto.EmergencyContact;
+        if (updateDto.EmergencyPhone != null) existing.EmergencyPhone = updateDto.EmergencyPhone;
+        if (updateDto.IsActive.HasValue) existing.IsActive = updateDto.IsActive.Value;
+        if (updateDto.RoomId.HasValue) existing.RoomId = updateDto.RoomId.Value;
+        
+        var updated = await _residentRepository.UpdateAsync(id, existing);
+        
+        if (updated == null)
+            return NotFound(new { message = "Resident not found" });
+        
+        var residentDto = new ResidentDto(
+            updated.Id,
+            updated.FirstName,
+            updated.LastName,
+            updated.DateOfBirth,
+            DateTime.Now.Year - updated.DateOfBirth.Year,
+            updated.MedicalConditions,
+            updated.EmergencyContact,
+            updated.EmergencyPhone,
+            updated.AdmissionDate,
+            updated.IsActive,
+            updated.RoomId,
+            updated.Room?.RoomNumber
+        );
+        
+        return Ok(residentDto);
+    }
+    
+    /// <summary>
+    /// Delete resident (Admin only)
+    /// </summary>
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var success = await _residentRepository.DeleteAsync(id);
+        
+        if (!success)
+            return NotFound(new { message = "Resident not found" });
+        
+        return NoContent();
+    }
+}
