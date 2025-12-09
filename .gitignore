@@ -117,3 +117,9 @@ Desktop.ini
 # Migration files (optional - uncomment if you want to exclude)
 # Migrations/
 
+# React Dashboard
+care-home-dashboard/node_modules/
+care-home-dashboard/dist/
+care-home-dashboard/.env
+care-home-dashboard/.env.local
+
