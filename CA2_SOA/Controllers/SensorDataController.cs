@@ -16,10 +16,74 @@ namespace CA2_SOA.Controllers;
 public class SensorDataController : ControllerBase
 {
     private readonly ISensorDataRepository _sensorDataRepository;
+    private readonly IAlertRepository _alertRepository;
     
-    public SensorDataController(ISensorDataRepository sensorDataRepository)
+    public SensorDataController(ISensorDataRepository sensorDataRepository, IAlertRepository alertRepository)
     {
         _sensorDataRepository = sensorDataRepository;
+        _alertRepository = alertRepository;
+    }
+    
+    /// <summary>
+    /// Check if sensor readings are abnormal and create alert if needed
+    /// </summary>
+    private async Task CheckAndCreateAlert(SensorData sensorData)
+    {
+        Console.WriteLine($"🔍 Checking sensor data: Room {sensorData.RoomId}, Temp: {sensorData.Temperature}°C, Humidity: {sensorData.Humidity}%");
+        
+        var alerts = new List<string>();
+        var severity = "Low";
+        
+        // Check temperature
+        if (sensorData.Temperature < 18)
+        {
+            alerts.Add($"Temperature too low ({sensorData.Temperature}°C)");
+            severity = sensorData.Temperature < 15 ? "Critical" : "Medium";
+            Console.WriteLine($"  ❄️  Temperature too low detected: {sensorData.Temperature}°C");
+        }
+        else if (sensorData.Temperature > 26)
+        {
+            alerts.Add($"Temperature too high ({sensorData.Temperature}°C)");
+            severity = sensorData.Temperature > 30 ? "Critical" : "Medium";
+            Console.WriteLine($"  🔥 Temperature too high detected: {sensorData.Temperature}°C");
+        }
+        
+        // Check humidity
+        if (sensorData.Humidity < 30)
+        {
+            alerts.Add($"Humidity too low ({sensorData.Humidity}%)");
+            if (severity == "Low") severity = "Medium";
+            Console.WriteLine($"  🏜️  Humidity too low detected: {sensorData.Humidity}%");
+        }
+        else if (sensorData.Humidity > 60)
+        {
+            alerts.Add($"Humidity too high ({sensorData.Humidity}%)");
+            if (severity == "Low") severity = "Medium";
+            Console.WriteLine($"  💧 Humidity too high detected: {sensorData.Humidity}%");
+        }
+        
+        // Create alert if any issues detected
+        if (alerts.Any())
+        {
+            Console.WriteLine($"  ⚠️  Creating alert: {string.Join(" and ", alerts)} (Severity: {severity})");
+            
+            var alert = new Alert
+            {
+                RoomId = sensorData.RoomId,
+                AlertType = alerts.Count > 1 ? "Environmental" : (alerts[0].Contains("Temperature") ? "Temperature" : "Humidity"),
+                Severity = severity,
+                Message = string.Join(" and ", alerts),
+                CreatedAt = DateTime.UtcNow,
+                IsResolved = false
+            };
+            
+            var createdAlert = await _alertRepository.CreateAsync(alert);
+            Console.WriteLine($"  ✅ Alert created with ID: {createdAlert.Id}");
+        }
+        else
+        {
+            Console.WriteLine($"  ✓ Readings normal, no alert needed");
+        }
     }
     
     /// <summary>
@@ -168,6 +232,7 @@ public class SensorDataController : ControllerBase
     
     /// <summary>
     /// Create a new sensor reading (typically from IoT devices)
+    /// Automatically creates alerts if readings are abnormal
     /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(SensorDataDto), StatusCodes.Status201Created)]
@@ -184,6 +249,9 @@ public class SensorDataController : ControllerBase
         };
         
         var created = await _sensorDataRepository.CreateAsync(sensorData);
+        
+        // Check for abnormal readings and create alert if needed
+        await CheckAndCreateAlert(created);
         
         // Reload to get Room navigation property
         var createdWithRoom = await _sensorDataRepository.GetByIdAsync(created.Id);
