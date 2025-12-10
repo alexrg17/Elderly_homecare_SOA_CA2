@@ -1,4 +1,15 @@
 const Table = ({ columns, data, onRowClick }) => {
+  const getCellValue = (row, column) => {
+    if (column.render) {
+      return column.render(row);
+    } else if (typeof column.accessor === 'function') {
+      return column.accessor(row);
+    } else if (typeof column.accessor === 'string') {
+      return row[column.accessor];
+    }
+    return null;
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
@@ -29,8 +40,8 @@ const Table = ({ columns, data, onRowClick }) => {
                 className={onRowClick ? 'hover:bg-gray-50 cursor-pointer' : ''}
               >
                 {columns.map((column, colIndex) => (
-                  <td key={colIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {column.render ? column.render(row) : row[column.accessor]}
+                  <td key={colIndex} className="px-6 py-4 text-sm text-gray-900">
+                    {getCellValue(row, column)}
                   </td>
                 ))}
               </tr>
