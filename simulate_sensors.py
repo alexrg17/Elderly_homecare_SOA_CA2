@@ -36,10 +36,30 @@ def login():
 def generate_sensor_reading(room_id, anomaly=False):
     """Generate realistic sensor data"""
     if anomaly:
-        # Occasionally generate abnormal readings (10% chance)
-        temperature = random.uniform(26.0, 32.0)  # Too hot
-        humidity = random.uniform(65.0, 80.0)  # Too humid
+        # Generate abnormal readings (50% chance for demo)
+        # Randomly choose between temperature or humidity anomaly
+        anomaly_type = random.choice(['temp', 'humidity', 'both'])
+        
+        if anomaly_type == 'temp':
+            # Temperature anomaly (too hot or too cold)
+            if random.random() < 0.5:
+                temperature = random.uniform(27.0, 32.0)  # Too hot
+            else:
+                temperature = random.uniform(12.0, 17.5)  # Too cold
+            humidity = random.uniform(*NORMAL_HUMIDITY_RANGE)
+        elif anomaly_type == 'humidity':
+            # Humidity anomaly
+            if random.random() < 0.5:
+                humidity = random.uniform(65.0, 80.0)  # Too humid
+            else:
+                humidity = random.uniform(15.0, 29.0)  # Too dry
+            temperature = random.uniform(*NORMAL_TEMP_RANGE)
+        else:
+            # Both abnormal
+            temperature = random.uniform(27.0, 32.0)  # Too hot
+            humidity = random.uniform(65.0, 80.0)  # Too humid
     else:
+        # Normal readings
         temperature = random.uniform(*NORMAL_TEMP_RANGE)
         humidity = random.uniform(*NORMAL_HUMIDITY_RANGE)
     
@@ -78,18 +98,17 @@ def simulate_sensors(token, duration_minutes=5, interval_seconds=10):
     try:
         while time.time() < end_time:
             for room_id in ROOM_IDS:
-                # 10% chance of anomaly (to trigger alerts)
-                anomaly = random.random() < 0.1
+                anomaly = random.random() < 0.5
                 
                 sensor_data = generate_sensor_reading(room_id, anomaly)
                 if send_sensor_data(token, sensor_data):
                     reading_count += 1
                     
                     if anomaly:
-                        print(f"  ⚠️  Anomaly detected in Room {room_id}!")
+                        print(f"  ⚠️  ABNORMAL: Room {room_id} - {sensor_data['temperature']}°C, {sensor_data['humidity']}%")
             
             print(f"  💤 Waiting {interval_seconds}s...\n")
-            time.time.sleep(interval_seconds)
+            time.sleep(interval_seconds)
     
     except KeyboardInterrupt:
         print("\n\n⏹️  Simulation stopped by user")
