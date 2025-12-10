@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import MainLayout from '../components/layout/MainLayout.jsx';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Card from '../components/common/Card.jsx';
@@ -11,6 +12,8 @@ import residentsService from '../services/residentsService';
 import roomsService from '../services/roomsService';
 
 const Residents = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
   const [residents, setResidents] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -140,9 +143,11 @@ const Residents = () => {
           <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); handleEdit(row); }}>
             <FaEdit className="w-4 h-4" />
           </Button>
-          <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); handleDelete(row.id); }}>
-            <FaTrash className="w-4 h-4" />
-          </Button>
+          {isAdmin && (
+            <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); handleDelete(row.id); }}>
+              <FaTrash className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       )
     }
@@ -338,17 +343,19 @@ const Residents = () => {
                   <FaEdit className="inline mr-2" />
                   Edit Resident
                 </Button>
-                <Button 
-                  variant="danger" 
-                  onClick={() => {
-                    setShowDetailsModal(false);
-                    handleDelete(selectedResident.id);
-                  }}
-                  className="flex-1"
-                >
-                  <FaTrash className="inline mr-2" />
-                  Delete Resident
-                </Button>
+                {isAdmin && (
+                  <Button 
+                    variant="danger" 
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      handleDelete(selectedResident.id);
+                    }}
+                    className="flex-1"
+                  >
+                    <FaTrash className="inline mr-2" />
+                    Delete Resident
+                  </Button>
+                )}
               </div>
             </div>
           </div>

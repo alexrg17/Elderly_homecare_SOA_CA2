@@ -200,7 +200,7 @@ public class RoomsController : ControllerBase
     }
     
     /// <summary>
-    /// Create a new room
+    /// Create a new room (Admin only)
     /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin")]
@@ -240,10 +240,10 @@ public class RoomsController : ControllerBase
     }
     
     /// <summary>
-    /// Update room
+    /// Update room (Admin only)
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Caretaker")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(RoomDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RoomDto>> Update(int id, [FromBody] UpdateRoomDto updateDto)
