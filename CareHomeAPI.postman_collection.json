@@ -1,0 +1,1402 @@
+{
+	"info": {
+		"_postman_id": "care-home-api-collection",
+		"name": "Elderly Care Home Monitoring API",
+		"description": "Complete API test collection for the Elderly Care Home Monitoring System.\n\nThis collection demonstrates all CRUD operations across 5 services:\n- Authentication (Login/Register)\n- Residents Management\n- Rooms Management\n- Sensor Data\n- Alerts\n\n**Setup Instructions:**\n1. Start the API: `cd CA2_SOA && dotnet run`\n2. Import this collection into Postman\n3. Run the requests in order (authentication first)\n4. Token is automatically saved after login",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "Login - Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Save token for subsequent requests",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"jwt_token\", jsonData.token);",
+									"    pm.environment.set(\"user_id\", jsonData.user.id);",
+									"    pm.test(\"Login successful\", function () {",
+									"        pm.expect(jsonData.token).to.be.a('string');",
+									"        pm.expect(jsonData.user.role).to.equal('Admin');",
+									"    });",
+									"} else {",
+									"    pm.test(\"Login failed\", function () {",
+									"        pm.response.to.have.status(401);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin123!\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/login",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Login with admin credentials to obtain JWT token"
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Caretaker",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.test(\"Caretaker login successful\", function () {",
+									"        pm.expect(jsonData.user.role).to.equal('Caretaker');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"caretaker1\",\n  \"password\": \"Care123!\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/login",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Login with caretaker credentials"
+					},
+					"response": []
+				},
+				{
+					"name": "Register New User",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generate unique username with timestamp",
+									"var timestamp = Date.now();",
+									"pm.environment.set('unique_username', 'testuser_' + timestamp);",
+									"pm.environment.set('unique_email', 'testuser_' + timestamp + '@carehome.com');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.test(\"User registered successfully\", function () {",
+									"        var jsonData = pm.response.json();",
+									"        pm.expect(jsonData.username).to.be.a('string');",
+									"        pm.expect(jsonData.role).to.equal('Viewer');",
+									"    });",
+									"} else if (pm.response.code === 400) {",
+									"    pm.test(\"User already exists (expected if re-running)\", function () {",
+									"        pm.expect(pm.response.code).to.equal(400);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{unique_username}}\",\n  \"password\": \"View123!\",\n  \"fullName\": \"Test Viewer User\",\n  \"email\": \"{{unique_email}}\",\n  \"role\": \"Viewer\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/register",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Register a new user account with auto-generated unique username"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints for login and user registration"
+		},
+		{
+			"name": "2. Rooms (CRUD)",
+			"item": [
+				{
+					"name": "Get All Rooms",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    if (jsonData.length > 0) {",
+									"        pm.environment.set(\"room_id\", jsonData[0].id);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/rooms",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "rooms"]
+						},
+						"description": "Retrieve all rooms in the care home"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Room by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Room retrieved successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('roomNumber');",
+									"    pm.expect(jsonData).to.have.property('capacity');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/rooms/{{room_id}}",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "rooms", "{{room_id}}"]
+						},
+						"description": "Get specific room details"
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Room",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Room created successfully\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"new_room_id\", jsonData.id);",
+									"    pm.expect(jsonData.roomNumber).to.equal('301');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roomNumber\": \"301\",\n  \"roomName\": \"Sunflower Suite\",\n  \"floor\": \"3rd Floor\",\n  \"capacity\": 2,\n  \"notes\": \"Room with garden view, recently renovated\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/rooms",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "rooms"]
+						},
+						"description": "Create a new room in the system"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Room",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Room updated successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.roomName).to.equal('Sunflower Suite - Updated');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roomName\": \"Sunflower Suite - Updated\",\n  \"notes\": \"Room refurbished with new furniture\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/rooms/{{new_room_id}}",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "rooms", "{{new_room_id}}"]
+						},
+						"description": "Update room information"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Room Details (with residents)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Room details retrieved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('residents');",
+									"    pm.expect(jsonData).to.have.property('latestSensorData');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/rooms/{{room_id}}/details",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "rooms", "{{room_id}}", "details"]
+						},
+						"description": "Get comprehensive room details including residents and sensors"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Room",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Room deleted successfully\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/rooms/{{new_room_id}}",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "rooms", "{{new_room_id}}"]
+						},
+						"description": "Delete a room from the system"
+					},
+					"response": []
+				}
+			],
+			"description": "Complete CRUD operations for room management"
+		},
+		{
+			"name": "3. Residents (CRUD)",
+			"item": [
+				{
+					"name": "Get All Residents",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Residents array returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    if (jsonData.length > 0) {",
+									"        pm.environment.set(\"resident_id\", jsonData[0].id);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/residents",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "residents"]
+						},
+						"description": "Get all residents in the care home"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Active Residents Only",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Only active residents returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    jsonData.forEach(function(resident) {",
+									"        pm.expect(resident.isActive).to.equal(true);",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/residents/active",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "residents", "active"]
+						},
+						"description": "Filter for active residents only"
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Resident",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Resident created successfully\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"new_resident_id\", jsonData.id);",
+									"    pm.expect(jsonData.firstName).to.equal('Thomas');",
+									"    pm.expect(jsonData.age).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Thomas\",\n  \"lastName\": \"Murphy\",\n  \"dateOfBirth\": \"1942-03-15T00:00:00Z\",\n  \"medicalConditions\": \"Heart condition, Type 2 Diabetes\",\n  \"emergencyContact\": \"Patricia Murphy (Daughter)\",\n  \"emergencyPhone\": \"+353-87-9988776\",\n  \"roomId\": 1\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/residents",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "residents"]
+						},
+						"description": "Add a new resident to the care home"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Resident by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Resident details retrieved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('firstName');",
+									"    pm.expect(jsonData).to.have.property('medicalConditions');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/residents/{{resident_id}}",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "residents", "{{resident_id}}"]
+						},
+						"description": "Get specific resident information"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Resident",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Resident updated successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.medicalConditions).to.include('Updated');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"medicalConditions\": \"Heart condition (Updated medication), Type 2 Diabetes\",\n  \"emergencyPhone\": \"+353-87-9988777\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/residents/{{new_resident_id}}",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "residents", "{{new_resident_id}}"]
+						},
+						"description": "Update resident information"
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Resident to Room",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Resident assigned to room\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roomId\": 2\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/residents/{{new_resident_id}}",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "residents", "{{new_resident_id}}"]
+						},
+						"description": "Move resident to a different room"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Resident",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Resident deleted successfully\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/residents/{{new_resident_id}}",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "residents", "{{new_resident_id}}"]
+						},
+						"description": "Remove resident from the system"
+					},
+					"response": []
+				}
+			],
+			"description": "Complete CRUD operations for resident management"
+		},
+		{
+			"name": "4. Sensor Data (CRUD)",
+			"item": [
+				{
+					"name": "Get All Sensor Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Sensor data retrieved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    if (jsonData.length > 0) {",
+									"        pm.environment.set(\"sensor_id\", jsonData[0].id);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/sensordata",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "sensordata"]
+						},
+						"description": "Get all sensor readings"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Recent Sensor Data (Last 50)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Recent data retrieved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.length).to.be.at.most(50);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/sensordata/recent?count=50",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "sensordata", "recent"],
+							"query": [
+								{
+									"key": "count",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Get the 50 most recent sensor readings"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sensor Data for Specific Room",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Room sensor data retrieved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    jsonData.forEach(function(reading) {",
+									"        pm.expect(reading.roomId).to.equal(1);",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/sensordata/room/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "sensordata", "room", "1"]
+						},
+						"description": "Get all sensor readings for a specific room"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Sensor Reading - Normal",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Normal sensor reading created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"new_sensor_id\", jsonData.id);",
+									"    pm.expect(jsonData.temperature).to.be.a('number');",
+									"    pm.expect(jsonData.humidity).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roomId\": 1,\n  \"temperature\": 21.5,\n  \"humidity\": 45.0,\n  \"sensorType\": \"DHT22\",\n  \"notes\": \"Normal reading from Postman test\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/sensordata",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "sensordata"]
+						},
+						"description": "Submit a normal sensor reading (no alert should be generated)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Sensor Reading - High Temperature Alert",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Abnormal reading triggers alert\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.temperature).to.be.above(26);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roomId\": 1,\n  \"temperature\": 28.5,\n  \"humidity\": 45.0,\n  \"sensorType\": \"DHT22\",\n  \"notes\": \"High temperature test - should trigger alert\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/sensordata",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "sensordata"]
+						},
+						"description": "Submit abnormal temperature reading to trigger alert"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Sensor Reading - Low Humidity Alert",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Low humidity triggers alert\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.humidity).to.be.below(30);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roomId\": 2,\n  \"temperature\": 22.0,\n  \"humidity\": 25.0,\n  \"sensorType\": \"DHT22\",\n  \"notes\": \"Low humidity test - should trigger alert\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/sensordata",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "sensordata"]
+						},
+						"description": "Submit low humidity reading to trigger alert"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Sensor Reading",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Sensor data deleted\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/sensordata/{{new_sensor_id}}",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "sensordata", "{{new_sensor_id}}"]
+						},
+						"description": "Delete a sensor reading"
+					},
+					"response": []
+				}
+			],
+			"description": "CRUD operations for sensor data with automatic alert generation"
+		},
+		{
+			"name": "5. Alerts (CRUD)",
+			"item": [
+				{
+					"name": "Get All Alerts",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Alerts retrieved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    if (jsonData.length > 0) {",
+									"        pm.environment.set(\"alert_id\", jsonData[0].id);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/alerts",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "alerts"]
+						},
+						"description": "Get all alerts in the system"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Active (Unresolved) Alerts",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Only unresolved alerts returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    jsonData.forEach(function(alert) {",
+									"        pm.expect(alert.isResolved).to.equal(false);",
+									"    });",
+									"    if (jsonData.length > 0) {",
+									"        pm.environment.set(\"unresolved_alert_id\", jsonData[0].id);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/alerts/active",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "alerts", "active"]
+						},
+						"description": "Filter for active unresolved alerts only"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Alerts by Severity",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Critical alerts filtered\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    jsonData.forEach(function(alert) {",
+									"        pm.expect(alert.severity).to.equal('Critical');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/alerts/severity/Critical",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "alerts", "severity", "Critical"]
+						},
+						"description": "Get alerts filtered by severity level"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Alerts for Specific Room",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Room alerts retrieved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    jsonData.forEach(function(alert) {",
+									"        pm.expect(alert.roomId).to.equal(1);",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/alerts/room/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "alerts", "room", "1"]
+						},
+						"description": "Get all alerts for a specific room"
+					},
+					"response": []
+				},
+				{
+					"name": "Resolve Alert",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Alert resolved successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.isResolved).to.equal(true);",
+									"    pm.expect(jsonData.resolutionNotes).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": {{user_id}},\n  \"resolutionNotes\": \"Adjusted room temperature controls. HVAC system recalibrated. Monitoring for next 24 hours.\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/alerts/{{unresolved_alert_id}}/resolve",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "alerts", "{{unresolved_alert_id}}", "resolve"]
+						},
+						"description": "Mark an alert as resolved with resolution notes"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Alert",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Alert deleted\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/alerts/{{alert_id}}",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "alerts", "{{alert_id}}"]
+						},
+						"description": "Delete an alert from the system"
+					},
+					"response": []
+				}
+			],
+			"description": "CRUD operations for alert management"
+		},
+		{
+			"name": "6. Users (CRUD)",
+			"item": [
+				{
+					"name": "Get All Users",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Users retrieved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/users",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "users"]
+						},
+						"description": "Get all system users"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User details retrieved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('username');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:5000/api/users/{{user_id}}",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "users", "{{user_id}}"]
+						},
+						"description": "Get specific user information"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User updated\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"System Administrator - Updated\",\n  \"email\": \"admin@carehome.com\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/users/{{user_id}}",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "users", "{{user_id}}"]
+						},
+						"description": "Update user information"
+					},
+					"response": []
+				}
+			],
+			"description": "User management operations"
+		}
+	],
+	"variable": [
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "room_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "new_room_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "resident_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "new_resident_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "sensor_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "new_sensor_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "alert_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "unresolved_alert_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+
