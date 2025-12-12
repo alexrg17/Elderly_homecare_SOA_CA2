@@ -36,4 +36,8 @@ public record LoginResponseDto(
     UserResponseDto User
 );
 
+public record ChangePasswordDto(
+    string NewPassword
+);
+
 

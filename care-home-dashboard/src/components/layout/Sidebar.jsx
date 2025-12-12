@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { FaHome, FaUsers, FaDoorOpen, FaThermometerHalf, FaBell, FaSignOutAlt, FaHospital } from 'react-icons/fa';
+import { FaHome, FaUsers, FaDoorOpen, FaThermometerHalf, FaBell, FaSignOutAlt, FaHospital, FaUserCog } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,6 +18,11 @@ const Sidebar = () => {
     { path: '/rooms', icon: FaDoorOpen, label: 'Rooms' },
     { path: '/sensors', icon: FaThermometerHalf, label: 'Sensors' },
     { path: '/alerts', icon: FaBell, label: 'Alerts' },
+  ];
+
+  // Admin-only menu items
+  const adminItems = [
+    { path: '/users', icon: FaUserCog, label: 'User Management' },
   ];
 
   return (
@@ -54,6 +59,34 @@ const Sidebar = () => {
               </NavLink>
             </li>
           ))}
+
+          {/* Admin Section */}
+          {user?.role === 'Admin' && (
+            <>
+              <li className="pt-4 mt-4 border-t border-gray-700">
+                <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                  Administration
+                </p>
+              </li>
+              {adminItems.map((item) => (
+                <li key={item.path}>
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-purple-600 text-white'
+                          : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                      }`
+                    }
+                  >
+                    <item.icon className="text-lg" />
+                    <span className="font-medium">{item.label}</span>
+                  </NavLink>
+                </li>
+              ))}
+            </>
+          )}
         </ul>
       </nav>
 

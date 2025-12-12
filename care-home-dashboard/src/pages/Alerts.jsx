@@ -18,6 +18,7 @@ const Alerts = () => {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // all, unresolved, resolved
   const [showResolveModal, setShowResolveModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [resolutionNotes, setResolutionNotes] = useState('');
 
@@ -37,6 +38,11 @@ const Alerts = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewDetails = (alert) => {
+    setSelectedAlert(alert);
+    setShowDetailsModal(true);
   };
 
   const handleResolve = (alert) => {
@@ -160,13 +166,13 @@ const Alerts = () => {
     {
       header: 'Actions',
       accessor: (row) => (
-        <div className="flex gap-2">
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
           {!row.isResolved && (
-            <Button size="sm" variant="success" onClick={() => handleResolve(row)}>
+            <Button size="sm" variant="success" onClick={(e) => { e.stopPropagation(); handleResolve(row); }}>
               <FaCheckCircle className="w-4 h-4" />
             </Button>
           )}
-          <Button size="sm" variant="danger" onClick={() => handleDelete(row.id)}>
+          <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); handleDelete(row.id); }}>
             <FaTrash className="w-4 h-4" />
           </Button>
         </div>
@@ -188,7 +194,7 @@ const Alerts = () => {
     <MainLayout>
       <PageHeader
         title="Alerts"
-        subtitle="View and manage system alerts"
+        subtitle="View and manage system alerts. Click on an alert to view full details."
         icon={FaBell}
       />
       
@@ -267,10 +273,191 @@ const Alerts = () => {
               </p>
             </div>
           ) : (
-            <Table columns={columns} data={filteredAlerts} />
+            <Table columns={columns} data={filteredAlerts} onRowClick={handleViewDetails} />
           )}
         </Card>
       </div>
+
+      {/* Alert Details Modal */}
+      {showDetailsModal && selectedAlert && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-red-500 to-red-600">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {selectedAlert.isResolved ? (
+                    <FaCheckCircle className="text-white text-3xl" />
+                  ) : (
+                    <FaExclamationTriangle className="text-white text-3xl" />
+                  )}
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">
+                      Alert Details
+                    </h3>
+                    <p className="text-red-100">
+                      Room {selectedAlert.roomNumber} - {selectedAlert.alertType}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="text-white hover:text-gray-200 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Status Banner */}
+              <div className={`p-4 rounded-lg border-l-4 ${
+                selectedAlert.isResolved
+                  ? 'bg-green-50 border-green-500'
+                  : 'bg-red-50 border-red-500'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-1">Alert Status</h4>
+                    <p className="text-sm text-gray-600">
+                      {selectedAlert.isResolved
+                        ? `Resolved by ${selectedAlert.resolvedByUsername || 'Unknown'}`
+                        : 'This alert is currently active and needs attention'
+                      }
+                    </p>
+                  </div>
+                  {selectedAlert.isResolved ? (
+                    <Badge variant="success">
+                      <FaCheckCircle className="inline mr-1" />
+                      Resolved
+                    </Badge>
+                  ) : (
+                    <Badge variant="error">
+                      <FaExclamationTriangle className="inline mr-1" />
+                      Active
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Alert Information Grid */}
+              <div className="grid grid-cols-2 gap-6">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-500 mb-1">Room</h4>
+                  <p className="text-xl font-semibold text-gray-900">{selectedAlert.roomNumber}</p>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-500 mb-1">Alert Type</h4>
+                  <p className="text-xl font-semibold text-gray-900">{selectedAlert.alertType}</p>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-500 mb-1">Severity</h4>
+                  <Badge variant={getSeverityVariant(selectedAlert.severity)} className="text-lg">
+                    {selectedAlert.severity}
+                  </Badge>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-500 mb-1">Created</h4>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {formatDateTime(selectedAlert.createdAt)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Alert Message */}
+              <div className="border-t pt-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-3">Alert Message</h4>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-gray-700">{selectedAlert.message}</p>
+                </div>
+              </div>
+
+              {/* Resolution Information */}
+              {selectedAlert.isResolved && (
+                <div className="border-t pt-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-3">Resolution Details</h4>
+                  <div className="space-y-4">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <p className="text-sm text-gray-600">Resolved By</p>
+                          <p className="font-semibold text-gray-900">
+                            {selectedAlert.resolvedByUsername || 'Unknown'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Resolved At</p>
+                          <p className="font-semibold text-gray-900">
+                            {selectedAlert.resolvedAt ? formatDateTime(selectedAlert.resolvedAt) : '-'}
+                          </p>
+                        </div>
+                      </div>
+                      {selectedAlert.resolutionNotes && (
+                        <div className="border-t border-green-300 pt-3 mt-3">
+                          <p className="text-sm text-gray-600 mb-2">Resolution Notes:</p>
+                          <p className="text-gray-800 whitespace-pre-wrap">{selectedAlert.resolutionNotes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Additional Information */}
+              <div className="border-t pt-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-3">Additional Information</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Alert ID:</span>
+                    <span className="font-medium text-gray-900">#{selectedAlert.id}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Room ID:</span>
+                    <span className="font-medium text-gray-900">#{selectedAlert.roomId}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
+                {!selectedAlert.isResolved && (
+                  <Button 
+                    variant="success" 
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      handleResolve(selectedAlert);
+                    }}
+                    className="flex-1"
+                  >
+                    <FaCheckCircle className="inline mr-2" />
+                    Resolve Alert
+                  </Button>
+                )}
+                <Button 
+                  variant="danger" 
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    handleDelete(selectedAlert.id);
+                  }}
+                  className="flex-1"
+                >
+                  <FaTrash className="inline mr-2" />
+                  Delete Alert
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  onClick={() => setShowDetailsModal(false)}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Resolve Modal */}
       {showResolveModal && selectedAlert && (

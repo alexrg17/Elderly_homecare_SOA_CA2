@@ -49,7 +49,18 @@ public class UserRepository : IUserRepository
         var existing = await _context.Users.FindAsync(id);
         if (existing == null) return null;
         
-        _context.Entry(existing).CurrentValues.SetValues(entity);
+        // Update properties
+        existing.Username = entity.Username;
+        existing.FullName = entity.FullName;
+        existing.Email = entity.Email;
+        existing.Role = entity.Role;
+        existing.IsActive = entity.IsActive;
+        if (!string.IsNullOrEmpty(entity.PasswordHash))
+        {
+            existing.PasswordHash = entity.PasswordHash;
+        }
+        
+        _context.Users.Update(existing);
         await _context.SaveChangesAsync();
         return existing;
     }

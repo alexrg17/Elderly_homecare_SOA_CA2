@@ -7,6 +7,7 @@ import Residents from './pages/Residents.jsx';
 import Rooms from './pages/Rooms.jsx';
 import Sensors from './pages/Sensors.jsx';
 import Alerts from './pages/Alerts.jsx';
+import Users from './pages/Users.jsx';
 
 function App() {
   return (
@@ -51,6 +52,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Alerts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute requiredRole="Admin">
+                <Users />
               </ProtectedRoute>
             }
           />

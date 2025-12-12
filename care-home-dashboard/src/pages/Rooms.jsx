@@ -13,6 +13,8 @@ import roomsService from '../services/roomsService';
 const Rooms = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'Admin';
+  const isNurse = user?.role === 'Nurse';
+  const canModify = isAdmin || isNurse; // Admin and Nurse can modify
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -184,7 +186,7 @@ const Rooms = () => {
       header: 'Actions',
       accessor: (row) => (
         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-          {isAdmin && (
+          {canModify ? (
             <>
               <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); handleEdit(row); }}>
                 <FaEdit className="w-4 h-4" />
@@ -193,8 +195,7 @@ const Rooms = () => {
                 <FaTrash className="w-4 h-4" />
               </Button>
             </>
-          )}
-          {!isAdmin && (
+          ) : (
             <span className="text-sm text-gray-500 italic">View only</span>
           )}
         </div>
@@ -216,10 +217,10 @@ const Rooms = () => {
     <MainLayout>
       <PageHeader
         title="Rooms"
-        subtitle={isAdmin ? "Manage care home rooms and occupancy. Click on a room to view full details." : "View care home rooms and occupancy. Click on a room to view full details."}
+        subtitle={canModify ? "Manage care home rooms and occupancy. Click on a room to view full details." : "View care home rooms and occupancy. Click on a room to view full details."}
         icon={FaDoorOpen}
         actions={
-          isAdmin && (
+          canModify && (
             <Button icon={FaPlus} onClick={handleAdd}>
               Add Room
             </Button>
@@ -239,8 +240,8 @@ const Rooms = () => {
             <div className="text-center py-12">
               <FaDoorOpen className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No rooms found</h3>
-              <p className="text-gray-600 mb-4">{isAdmin ? 'Get started by adding your first room.' : 'No rooms have been created yet.'}</p>
-              {isAdmin && (
+              <p className="text-gray-600 mb-4">{canModify ? 'Get started by adding your first room.' : 'No rooms have been created yet.'}</p>
+              {canModify && (
                 <Button icon={FaPlus} onClick={handleAdd}>
                   Add Room
                 </Button>
@@ -370,7 +371,7 @@ const Rooms = () => {
               </div>
 
               {/* Action Buttons */}
-              {isAdmin && (
+              {canModify && (
                 <div className="flex gap-3 pt-4 border-t">
                   <Button 
                     variant="secondary" 
@@ -396,10 +397,10 @@ const Rooms = () => {
                   </Button>
                 </div>
               )}
-              {!isAdmin && (
+              {!canModify && (
                 <div className="pt-4 border-t">
                   <p className="text-center text-sm text-gray-500 italic">
-                    Only administrators can modify room settings
+                    Only administrators and nurses can modify room settings
                   </p>
                 </div>
               )}

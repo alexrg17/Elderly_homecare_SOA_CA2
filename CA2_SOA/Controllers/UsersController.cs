@@ -84,9 +84,9 @@ public class UsersController : ControllerBase
             return NotFound(new { message = "User not found" });
         
         // Update only provided fields
-        if (updateDto.FullName != null) existing.FullName = updateDto.FullName;
-        if (updateDto.Email != null) existing.Email = updateDto.Email;
-        if (updateDto.Role != null) existing.Role = updateDto.Role;
+        if (!string.IsNullOrEmpty(updateDto.FullName)) existing.FullName = updateDto.FullName;
+        if (!string.IsNullOrEmpty(updateDto.Email)) existing.Email = updateDto.Email;
+        if (!string.IsNullOrEmpty(updateDto.Role)) existing.Role = updateDto.Role;
         if (updateDto.IsActive.HasValue) existing.IsActive = updateDto.IsActive.Value;
         
         var updated = await _userRepository.UpdateAsync(id, existing);
@@ -105,6 +105,28 @@ public class UsersController : ControllerBase
         );
         
         return Ok(userDto);
+    }
+    
+    /// <summary>
+    /// Reset user password (Admin only)
+    /// </summary>
+    [HttpPost("{id}/reset-password")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResetPassword(int id, [FromBody] ChangePasswordDto passwordDto)
+    {
+        var user = await _userRepository.GetByIdAsync(id);
+        
+        if (user == null)
+            return NotFound(new { message = "User not found" });
+        
+        // Hash the new password
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(passwordDto.NewPassword);
+        
+        await _userRepository.UpdateAsync(id, user);
+        
+        return Ok(new { message = "Password reset successfully" });
     }
     
     /// <summary>

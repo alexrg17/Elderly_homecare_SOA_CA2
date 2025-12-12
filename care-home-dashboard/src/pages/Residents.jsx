@@ -14,6 +14,8 @@ import roomsService from '../services/roomsService';
 const Residents = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'Admin';
+  const isNurse = user?.role === 'Nurse';
+  const canModify = isAdmin || isNurse; // Admin and Nurse can modify
   const [residents, setResidents] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -140,13 +142,15 @@ const Residents = () => {
       header: 'Actions',
       accessor: (row) => (
         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-          <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); handleEdit(row); }}>
-            <FaEdit className="w-4 h-4" />
-          </Button>
-          {isAdmin && (
-            <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); handleDelete(row.id); }}>
-              <FaTrash className="w-4 h-4" />
-            </Button>
+          {canModify && (
+            <>
+              <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); handleEdit(row); }}>
+                <FaEdit className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); handleDelete(row.id); }}>
+                <FaTrash className="w-4 h-4" />
+              </Button>
+            </>
           )}
         </div>
       )
@@ -170,9 +174,11 @@ const Residents = () => {
         subtitle="Manage elderly care home residents. Click on a resident to view full details."
         icon={FaUser}
         actions={
-          <Button icon={FaPlus} onClick={handleAdd}>
-            Add Resident
-          </Button>
+          canModify && (
+            <Button icon={FaPlus} onClick={handleAdd}>
+              Add Resident
+            </Button>
+          )
         }
       />
       
@@ -188,10 +194,12 @@ const Residents = () => {
             <div className="text-center py-12">
               <FaUser className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No residents found</h3>
-              <p className="text-gray-600 mb-4">Get started by adding your first resident.</p>
-              <Button icon={FaPlus} onClick={handleAdd}>
-                Add Resident
-              </Button>
+              <p className="text-gray-600 mb-4">{canModify ? 'Get started by adding your first resident.' : 'No residents available to display.'}</p>
+              {canModify && (
+                <Button icon={FaPlus} onClick={handleAdd}>
+                  Add Resident
+                </Button>
+              )}
             </div>
           ) : (
             <Table columns={columns} data={residents} onRowClick={handleViewDetails} />
@@ -332,30 +340,45 @@ const Residents = () => {
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4 border-t">
+                {canModify ? (
+                  <>
+                    <Button 
+                      variant="secondary" 
+                      onClick={() => {
+                        setShowDetailsModal(false);
+                        handleEdit(selectedResident);
+                      }}
+                      className="flex-1"
+                    >
+                      <FaEdit className="inline mr-2" />
+                      Edit Resident
+                    </Button>
+                    <Button 
+                      variant="danger" 
+                      onClick={() => {
+                        setShowDetailsModal(false);
+                        handleDelete(selectedResident.id);
+                      }}
+                      className="flex-1"
+                  >
+                      <FaTrash className="inline mr-2" />
+                      Delete Resident
+                    </Button>
+                  </>
+                ) : (
+                  <div className="w-full text-center py-3">
+                    <p className="text-sm text-gray-500 italic">
+                      Only administrators and nurses can modify resident information
+                    </p>
+                  </div>
+                )}
                 <Button 
                   variant="secondary" 
-                  onClick={() => {
-                    setShowDetailsModal(false);
-                    handleEdit(selectedResident);
-                  }}
-                  className="flex-1"
+                  onClick={() => setShowDetailsModal(false)}
+                  className={canModify ? "" : "flex-1"}
                 >
-                  <FaEdit className="inline mr-2" />
-                  Edit Resident
+                  Close
                 </Button>
-                {isAdmin && (
-                  <Button 
-                    variant="danger" 
-                    onClick={() => {
-                      setShowDetailsModal(false);
-                      handleDelete(selectedResident.id);
-                    }}
-                    className="flex-1"
-                  >
-                    <FaTrash className="inline mr-2" />
-                    Delete Resident
-                  </Button>
-                )}
               </div>
             </div>
           </div>

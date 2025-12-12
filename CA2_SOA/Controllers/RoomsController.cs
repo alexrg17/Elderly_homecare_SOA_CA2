@@ -200,10 +200,10 @@ public class RoomsController : ControllerBase
     }
     
     /// <summary>
-    /// Create a new room (Admin only)
+    /// Create a new room (Admin and Nurse only)
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Nurse")]
     [ProducesResponseType(typeof(RoomDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<RoomDto>> Create([FromBody] CreateRoomDto createDto)
@@ -240,10 +240,10 @@ public class RoomsController : ControllerBase
     }
     
     /// <summary>
-    /// Update room (Admin only)
+    /// Update room (Admin and Nurse only)
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Nurse")]
     [ProducesResponseType(typeof(RoomDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RoomDto>> Update(int id, [FromBody] UpdateRoomDto updateDto)
@@ -284,10 +284,10 @@ public class RoomsController : ControllerBase
     }
     
     /// <summary>
-    /// Delete room (Admin only)
+    /// Delete room (Admin and Nurse only)
     /// </summary>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Nurse")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)

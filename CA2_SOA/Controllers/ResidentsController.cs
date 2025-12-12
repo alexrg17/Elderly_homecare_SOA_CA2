@@ -133,10 +133,10 @@ public class ResidentsController : ControllerBase
     }
     
     /// <summary>
-    /// Create a new resident
+    /// Create a new resident (Admin and Nurse only)
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin,Caretaker")]
+    [Authorize(Roles = "Admin,Nurse")]
     [ProducesResponseType(typeof(ResidentDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ResidentDto>> Create([FromBody] CreateResidentDto createDto)
     {
@@ -174,10 +174,10 @@ public class ResidentsController : ControllerBase
     }
     
     /// <summary>
-    /// Update resident
+    /// Update resident (Admin and Nurse only)
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Caretaker")]
+    [Authorize(Roles = "Admin,Nurse")]
     [ProducesResponseType(typeof(ResidentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ResidentDto>> Update(int id, [FromBody] UpdateResidentDto updateDto)
@@ -221,10 +221,10 @@ public class ResidentsController : ControllerBase
     }
     
     /// <summary>
-    /// Delete resident (Admin only)
+    /// Delete resident (Admin and Nurse only)
     /// </summary>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Nurse")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)

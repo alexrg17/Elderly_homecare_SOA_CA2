@@ -179,10 +179,10 @@ public class AlertsController : ControllerBase
     }
     
     /// <summary>
-    /// Create a new alert
+    /// Create a new alert (All authenticated users can create alerts)
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin,Caretaker")]
+    [Authorize(Roles = "Admin,Nurse,Caretaker")]
     [ProducesResponseType(typeof(AlertDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<AlertDto>> Create([FromBody] CreateAlertDto createDto)
     {
@@ -223,10 +223,10 @@ public class AlertsController : ControllerBase
     }
     
     /// <summary>
-    /// Resolve an alert
+    /// Resolve an alert (All authenticated users can resolve alerts)
     /// </summary>
     [HttpPost("{id}/resolve")]
-    [Authorize(Roles = "Admin,Caretaker")]
+    [Authorize(Roles = "Admin,Nurse,Caretaker")]
     [ProducesResponseType(typeof(AlertDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AlertDto>> Resolve(int id, [FromBody] ResolveAlertDto resolveDto)
@@ -268,10 +268,10 @@ public class AlertsController : ControllerBase
     }
     
     /// <summary>
-    /// Update alert
+    /// Update alert (All authenticated users can update alerts)
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Caretaker")]
+    [Authorize(Roles = "Admin,Nurse,Caretaker")]
     [ProducesResponseType(typeof(AlertDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AlertDto>> Update(int id, [FromBody] UpdateAlertDto updateDto)
@@ -318,10 +318,10 @@ public class AlertsController : ControllerBase
     }
     
     /// <summary>
-    /// Delete alert (Admin only)
+    /// Delete alert (All authenticated users can delete alerts)
     /// </summary>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Nurse,Caretaker")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
