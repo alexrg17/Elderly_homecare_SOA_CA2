@@ -10,9 +10,25 @@ using CA2_SOA.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Database Context
+// Configure Railway PORT if available
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
+// Add Database Context - Use PostgreSQL in Azure, SQLite locally
+var useAzureDatabase = builder.Configuration.GetValue<bool>("UseAzureDatabase");
+var azurePostgresConnection = builder.Configuration.GetConnectionString("AzurePostgres");
+
 builder.Services.AddDbContext<CareHomeDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    if (useAzureDatabase && !string.IsNullOrEmpty(azurePostgresConnection))
+    {
+        options.UseNpgsql(azurePostgresConnection);
+    }
+    else
+    {
+        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+    }
+});
 
 // Add Controllers
 builder.Services.AddControllers();
