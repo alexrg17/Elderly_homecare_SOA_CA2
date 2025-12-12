@@ -1,420 +1,383 @@
-# Elderly Care Home Room Monitoring API
+# Elderly Care Home Management System
 
-A comprehensive REST API for managing elderly care home operations, including room management, resident tracking, environmental sensor monitoring, and alert systems.
+A complete web application for managing elderly care homes, including a REST API backend and a React dashboard. The system helps staff monitor residents, manage rooms, track environmental sensors, and respond to alerts.
 
-## 📋 Project Overview
+## 📋 What Is This Project?
 
-This API service implements a Service-Oriented Architecture (SOA) for monitoring and managing elderly care facilities. It provides endpoints for managing residents, rooms, environmental sensors (temperature/humidity), and alerts for caretakers and administrators.
+This is a full-stack care home management system built for my Service Oriented Architecture course assignment. It consists of:
 
-**Student:** [Your Name]  
-**Course:** Service Oriented Architecture (SOA)  
-**Assignment:** CA2 - Individual Web Service  
-**Institution:** Dundalk Institute of Technology
+1. **Backend API** - Built with ASP.NET Core, handles all data and business logic
+2. **Web Dashboard** - Built with React, provides a user-friendly interface for staff
+3. **SQLite Database** - Stores all residents, rooms, sensor data, and alerts
+4. **Sensor Simulation** - Python script that simulates IoT temperature/humidity sensors
 
----
-
-## 🎯 Features
-
-### Core Functionality
-- ✅ **Complete CRUD Operations** for 5 entities (Users, Rooms, Residents, SensorData, Alerts)
-- ✅ **JWT Authentication & Authorization** with role-based access control (Admin, Caretaker, Viewer)
-- ✅ **Entity Framework Core** with SQL Server database
-- ✅ **Repository Pattern** for separation of concerns
-- ✅ **DTOs** to separate data models from API responses
-- ✅ **One-to-Many Relationships**:
-  - Room → Residents
-  - Room → SensorData
-  - Room → Alerts
-
-### Additional Features
-- 🔐 Secure password hashing with BCrypt
-- 📊 RESTful API design following best practices
-- 📝 Comprehensive Swagger/OpenAPI documentation
-- 🏗️ Clean Architecture with proper separation of concerns
-- ⚡ Async/await for improved performance
-- 🎨 Role-based authorization
+The system allows care home staff to manage residents, assign them to rooms, monitor environmental conditions, and respond to alerts when something goes wrong (like abnormal temperature or humidity).
 
 ---
 
-## 🏗️ Architecture
-
-### Project Structure
-```
-CA2_SOA/
-├── Controllers/          # API Controllers (REST endpoints)
-│   ├── AuthController.cs
-│   ├── UsersController.cs
-│   ├── RoomsController.cs
-│   ├── ResidentsController.cs
-│   ├── SensorDataController.cs
-│   └── AlertsController.cs
-├── Models/              # Entity Models (Database tables)
-│   ├── User.cs
-│   ├── Room.cs
-│   ├── Resident.cs
-│   ├── SensorData.cs
-│   └── Alert.cs
-├── DTOs/               # Data Transfer Objects
-│   ├── UserDTOs.cs
-│   ├── RoomDTOs.cs
-│   ├── ResidentDTOs.cs
-│   ├── SensorDataDTOs.cs
-│   └── AlertDTOs.cs
-├── Data/               # Database Context
-│   └── CareHomeDbContext.cs
-├── Interfaces/         # Repository Interfaces
-│   ├── IRepository.cs
-│   ├── IUserRepository.cs
-│   ├── IRoomRepository.cs
-│   ├── IResidentRepository.cs
-│   ├── ISensorDataRepository.cs
-│   └── IAlertRepository.cs
-├── Repositories/       # Repository Implementations
-│   ├── UserRepository.cs
-│   ├── RoomRepository.cs
-│   ├── ResidentRepository.cs
-│   ├── SensorDataRepository.cs
-│   └── AlertRepository.cs
-├── Services/           # Business Logic Services
-│   ├── JwtService.cs
-│   └── AuthService.cs
-└── Program.cs          # Application Entry Point
-```
-
-### Design Patterns Used
-- **Repository Pattern**: Abstraction layer for data access
-- **Dependency Injection**: For loose coupling and testability
-- **DTO Pattern**: Separation between domain models and API contracts
-- **Service Layer**: Business logic separation
-
----
-
-## 🚀 Getting Started
+## 🚀 How to Run the Project
 
 ### Prerequisites
-- .NET 8.0 SDK or later
-- SQL Server (LocalDB, Express, or Full)
-- Visual Studio 2022, Rider, or VS Code
 
-### Installation
+You need to have these installed on your computer:
+- .NET 8.0 SDK (for the backend API)
+- Node.js and npm (for the frontend dashboard)
+- Python 3.x (optional, for sensor simulation)
 
-1. **Clone the repository**
+### Step 1: Start the Backend API
+
+1. Open a terminal
+2. Navigate to the CA2_SOA folder:
    ```bash
-   git clone <your-repo-url>
-   cd CA2_SOA
+   cd /Users/alex/RiderProjects/CA2_SOA/CA2_SOA
    ```
-
-2. **Update Database Connection String**
-   
-   Edit `appsettings.json`:
-   ```json
-   "ConnectionStrings": {
-     "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=CareHomeDB;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
-   }
-   ```
-
-3. **Restore NuGet Packages**
+3. Run the API:
    ```bash
-   dotnet restore
+   dotnet run
    ```
+4. You should see something like:
+   ```
+   Now listening on: http://localhost:5000
+   ```
+5. Keep this terminal open - the API needs to stay running
 
-4. **Run the Application**
+### Step 2: Start the Frontend Dashboard
+
+1. Open a **new** terminal (keep the first one running)
+2. Navigate to the dashboard folder:
    ```bash
-   dotnet run --project CA2_SOA
+   cd /Users/alex/RiderProjects/CA2_SOA/care-home-dashboard
    ```
+3. Install dependencies (only needed the first time):
+   ```bash
+   npm install
+   ```
+4. Run the dashboard:
+   ```bash
+   npm run dev
+   ```
+5. You should see:
+   ```
+   Local: http://localhost:5173/
+   ```
+6. Open your browser and go to `http://localhost:5173`
 
-5. **Access Swagger UI**
-   
-   Navigate to: `https://localhost:5001` or `http://localhost:5000`
+### Step 3: Simulate Sensor Data (Optional)
+
+If you want to see live sensor readings and automatic alerts:
+
+1. Open a **third** terminal
+2. Navigate to the project root:
+   ```bash
+   cd /Users/alex/RiderProjects/CA2_SOA
+   ```
+3. Run the sensor simulator:
+   ```bash
+   python3 simulate_sensors.py
+   ```
+4. This will send temperature/humidity readings every 10 seconds
 
 ---
 
-## 🔐 Authentication
+## 👥 User Accounts & Passwords
 
-### Default Credentials
+The system has three types of users with different permissions. Here are the test accounts:
 
-**Admin Account:**
-- Username: `admin`
-- Password: `Admin123!`
+### 🔴 Admin
+**Username:** `admin`  
+**Password:** `Admin123!`
 
-**Caretaker Account:**
-- Username: `caretaker1`
-- Password: `Care123!`
+**What admins can do:**
+- Everything! Full access to all features
+- Manage user accounts (create, edit, delete users)
+- Add, edit, and delete residents
+- Add, edit, and delete rooms
+- View and resolve alerts
+- Access the Admin Panel to manage all users
+- Reset passwords for other users
 
-### How to Authenticate
+### 🟢 Nurse
+**Username:** `nurse`  
+**Password:** `Nurse123!`
 
-1. **Login via API**
-   ```
-   POST /api/auth/login
-   Body: {
-     "username": "admin",
-     "password": "Admin123!"
-   }
-   ```
+**What nurses can do:**
+- Add, edit, and delete residents
+- Add, edit, and delete rooms
+- Assign residents to rooms
+- View and resolve alerts
+- View sensor data
+- **Cannot** access the Admin Panel
+- **Cannot** manage user accounts
 
-2. **Copy the JWT token** from the response
+### 🟡 Caretaker
+**Username:** `caretaker1`  
+**Password:** `Caretaker123!`
 
-3. **In Swagger UI:**
-   - Click "Authorize" button
-   - Enter: `Bearer <your-token-here>`
-   - Click "Authorize"
-
-4. **All subsequent requests** will include the token
-
----
-
-## 📡 API Endpoints
-
-### Authentication
-- `POST /api/auth/login` - Login and get JWT token
-- `POST /api/auth/register` - Register new user
-
-### Users (🔒 Requires Auth)
-- `GET /api/users` - Get all users (Admin only)
-- `GET /api/users/{id}` - Get user by ID
-- `PUT /api/users/{id}` - Update user
-- `DELETE /api/users/{id}` - Delete user (Admin only)
-
-### Rooms (🔒 Requires Auth)
-- `GET /api/rooms` - Get all rooms
-- `GET /api/rooms/{id}` - Get room by ID
-- `GET /api/rooms/{id}/details` - Get room with residents, sensors, alerts
-- `GET /api/rooms/occupied` - Get occupied rooms
-- `GET /api/rooms/available` - Get available rooms
-- `POST /api/rooms` - Create new room (Admin only)
-- `PUT /api/rooms/{id}` - Update room
-- `DELETE /api/rooms/{id}` - Delete room (Admin only)
-
-### Residents (🔒 Requires Auth)
-- `GET /api/residents` - Get all residents
-- `GET /api/residents/active` - Get active residents
-- `GET /api/residents/{id}` - Get resident by ID
-- `GET /api/residents/room/{roomId}` - Get residents by room
-- `POST /api/residents` - Create new resident
-- `PUT /api/residents/{id}` - Update resident
-- `DELETE /api/residents/{id}` - Delete resident (Admin only)
-
-### Sensor Data (🔒 Requires Auth)
-- `GET /api/sensordata` - Get all sensor readings
-- `GET /api/sensordata/recent?count=50` - Get recent readings
-- `GET /api/sensordata/{id}` - Get reading by ID
-- `GET /api/sensordata/room/{roomId}` - Get readings by room
-- `GET /api/sensordata/room/{roomId}/latest` - Get latest reading for room
-- `GET /api/sensordata/daterange?startDate=...&endDate=...` - Get by date range
-- `POST /api/sensordata` - Create new reading (IoT devices)
-- `PUT /api/sensordata/{id}` - Update reading (Admin only)
-- `DELETE /api/sensordata/{id}` - Delete reading (Admin only)
-
-### Alerts (🔒 Requires Auth)
-- `GET /api/alerts` - Get all alerts
-- `GET /api/alerts/active` - Get unresolved alerts
-- `GET /api/alerts/{id}` - Get alert by ID
-- `GET /api/alerts/room/{roomId}` - Get alerts by room
-- `GET /api/alerts/severity/{severity}` - Get by severity (Low, Medium, High, Critical)
-- `POST /api/alerts` - Create new alert
-- `POST /api/alerts/{id}/resolve` - Resolve alert
-- `PUT /api/alerts/{id}` - Update alert
-- `DELETE /api/alerts/{id}` - Delete alert (Admin only)
-
----
-
-## 💾 Database Schema
-
-### Tables & Relationships
-
-**Users**
-- Primary key: Id
-- Fields: Username, PasswordHash, FullName, Email, Role, CreatedAt, IsActive
-
-**Rooms**
-- Primary key: Id
-- Fields: RoomNumber (unique), RoomName, Floor, Capacity, IsOccupied, Notes, CreatedAt
-- **Has Many**: Residents, SensorReadings, Alerts
-
-**Residents**
-- Primary key: Id
-- Foreign key: RoomId (nullable)
-- Fields: FirstName, LastName, DateOfBirth, MedicalConditions, EmergencyContact, EmergencyPhone, AdmissionDate, IsActive
-- **Belongs To**: Room
-
-**SensorData**
-- Primary key: Id
-- Foreign key: RoomId (required)
-- Fields: Temperature, Humidity, Timestamp, SensorType, Notes
-- **Belongs To**: Room
-
-**Alerts**
-- Primary key: Id
-- Foreign key: RoomId (required)
-- Fields: AlertType, Severity, Message, CreatedAt, IsResolved, ResolvedAt, ResolvedByUserId, ResolutionNotes
-- **Belongs To**: Room
+**What caretakers can do:**
+- View all residents (read-only)
+- View all rooms (read-only)
+- View and resolve alerts
+- View sensor data
+- **Cannot** add, edit, or delete residents or rooms
+- **Cannot** access the Admin Panel
+- **Cannot** manage user accounts
 
 ---
 
 ## 🧪 Testing with Postman
 
-### Import Collection Steps
+The project includes ready-made Postman tests to verify all API endpoints work correctly.
 
-1. Create new Postman collection: "Care Home API"
-2. Set collection variable: `baseUrl = https://localhost:5001`
-3. Set collection variable: `token` (will be filled after login)
+### How to Run Postman Tests
 
-### Example Requests
+1. **Open Postman** on your computer
 
-**1. Login**
-```
-POST {{baseUrl}}/api/auth/login
-Body (JSON):
-{
-  "username": "admin",
-  "password": "Admin123!"
-}
-```
-→ Save the `token` from response
+2. **Import the Collection**
+   - Click "Import" in Postman
+   - Select the file: `CareHomeAPI.postman_collection.json`
+   - This contains all the test requests
 
-**2. Get All Rooms**
-```
-GET {{baseUrl}}/api/rooms
-Headers:
-  Authorization: Bearer {{token}}
-```
+3. **Import the Environment**
+   - Click the "Environments" tab
+   - Click "Import"
+   - Select the file: `CareHomeAPI.postman_environment.json`
+   - This sets up the correct server URL (http://localhost:5000/api)
 
-**3. Create Sensor Reading**
-```
-POST {{baseUrl}}/api/sensordata
-Headers:
-  Authorization: Bearer {{token}}
-Body (JSON):
-{
-  "roomId": 1,
-  "temperature": 22.5,
-  "humidity": 45.0,
-  "sensorType": "DHT22"
-}
-```
+4. **Select the Environment**
+   - In the top-right corner, select "Elderly Care Home - Local" from the dropdown
 
-**4. Get Room Details**
+5. **Run the Tests**
+   - Make sure your backend API is running (`dotnet run` in CA2_SOA folder)
+   - Open the "Care Home API" collection
+   - Click on "Authentication" folder
+   - Run the "Login - Admin" request first
+   - The token will automatically be saved
+   - Now you can run any other request in the collection
+
+### What Tests Are Included?
+
+The Postman collection tests all these features:
+- **Authentication**: Login and registration
+- **Users**: Get all users, get user by ID, update user
+- **Rooms**: Create, read, update, delete rooms
+- **Residents**: Create, read, update, delete residents
+- **Sensor Data**: Get readings, get recent data, get by room
+- **Alerts**: Get alerts, resolve alerts, filter by severity
+
+All tests should pass if the API is running correctly.
+
+---
+
+## 📊 What's Inside the Dashboard?
+
+When you log in to the web dashboard, here's what you can do:
+
+### Dashboard (Home Page)
+- See quick statistics: total residents, rooms, recent sensor readings
+- View active alerts that need attention
+- See abnormal sensor readings
+
+### Residents Page
+- View all residents in a table
+- Add new residents
+- Edit resident details (name, age, medical conditions, emergency contact)
+- Delete residents (admin/nurse only)
+- Assign residents to rooms
+- Click on a resident to see full details in a popup
+
+### Rooms Page
+- View all rooms with their status (Available, Occupied, Full)
+- Add new rooms
+- Edit room details (room number, floor, capacity)
+- Delete rooms (admin/nurse only)
+- See how many residents are in each room
+- Click on a room to see full details including notes
+
+### Sensor Data Page
+- View the last 50 sensor readings from all rooms
+- See temperature and humidity levels
+- Readings update automatically if you run the Python simulator
+- Abnormal readings are highlighted in red
+- Click "Abnormal Readings" to filter and see only problematic readings
+
+### Alerts Page
+- View all alerts (high temperature, low humidity, etc.)
+- Filter alerts by status (Active or Resolved)
+- Mark alerts as resolved and add notes on how you fixed them
+- Click on an alert to see full details
+- Alerts are automatically created when sensors detect problems
+
+### Admin Panel (Admins Only)
+- Manage all user accounts
+- Create new users (admin, nurse, or caretaker)
+- Edit user roles and details
+- Deactivate/reactivate user accounts
+- Reset passwords for users who forgot them
+- Delete user accounts
+
+---
+
+## 🏗️ Project Structure
+
 ```
-GET {{baseUrl}}/api/rooms/1/details
-Headers:
-  Authorization: Bearer {{token}}
+CA2_SOA/
+├── CA2_SOA/                          # Backend API
+│   ├── Controllers/                  # API endpoints
+│   ├── Models/                       # Database tables
+│   ├── DTOs/                         # Data transfer objects
+│   ├── Repositories/                 # Database access layer
+│   ├── Services/                     # Business logic
+│   ├── CareHomeDB.db                 # SQLite database file
+│   └── Program.cs                    # API startup
+│
+├── care-home-dashboard/              # Frontend React app
+│   ├── src/
+│   │   ├── components/               # Reusable UI components
+│   │   ├── pages/                    # Dashboard pages
+│   │   ├── services/                 # API calls
+│   │   └── contexts/                 # Authentication state
+│   └── package.json                  # Dependencies
+│
+├── CA2_SOA.Tests/                    # Unit tests
+│   ├── Controllers/                  # Controller tests
+│   ├── Repositories/                 # Repository tests
+│   └── Services/                     # Service tests
+│
+├── simulate_sensors.py               # IoT sensor simulator
+├── CareHomeAPI.postman_collection.json    # Postman tests
+└── CareHomeAPI.postman_environment.json   # Postman environment
 ```
 
 ---
 
-## 📚 Technologies & Packages
+## 🔧 Technologies Used
 
-### Core Technologies
-- **ASP.NET Core 8.0** - Web API framework
-- **Entity Framework Core 8.0** - ORM for database access
-- **SQL Server** - Relational database
+### Backend
+- **ASP.NET Core 8.0** - REST API framework
+- **Entity Framework Core** - Database access (ORM)
+- **SQLite** - Lightweight database
+- **JWT Authentication** - Secure login tokens
+- **BCrypt** - Password hashing for security
 
-### NuGet Packages
-- `Microsoft.EntityFrameworkCore` (8.0.11)
-- `Microsoft.EntityFrameworkCore.SqlServer` (8.0.11)
-- `Microsoft.EntityFrameworkCore.Tools` (8.0.11)
-- `Microsoft.AspNetCore.Authentication.JwtBearer` (8.0.11)
-- `System.IdentityModel.Tokens.Jwt` (8.2.1)
-- `BCrypt.Net-Next` (4.0.3)
-- `Swashbuckle.AspNetCore` (6.6.2)
+### Frontend
+- **React 18** - UI framework
+- **React Router** - Page navigation
+- **Axios** - API calls
+- **Tailwind CSS** - Styling
+- **Vite** - Fast development server
 
----
+### Testing
+- **xUnit** - Unit testing framework
+- **Moq** - Mocking for tests
+- **Postman** - API integration testing
 
-## 📖 Key Concepts & Terms
-
-### SOA Principles Applied
-- **Loose Coupling**: Repository interfaces decouple data access from business logic
-- **Reusability**: Generic repository pattern allows code reuse
-- **Abstraction**: DTOs abstract database entities from API consumers
-- **Statelessness**: REST API with JWT for stateless authentication
-
-### ORM (Object-Relational Mapping)
-Entity Framework Core maps C# classes to database tables, eliminating need for raw SQL queries.
-
-### Routes
-RESTful routes follow convention:
-- `GET /api/resource` - List all
-- `GET /api/resource/{id}` - Get one
-- `POST /api/resource` - Create
-- `PUT /api/resource/{id}` - Update
-- `DELETE /api/resource/{id}` - Delete
-
-### Idempotent Operations
-- `GET`, `PUT`, `DELETE` are idempotent (same result when repeated)
-- `POST` is NOT idempotent (creates new resource each time)
+### Other
+- **Python 3** - Sensor simulation script
 
 ---
 
-## 🎓 References & Sources
+## 📚 Key Features
 
-### Official Documentation
-- [ASP.NET Core Documentation](https://learn.microsoft.com/en-us/aspnet/core/)
-- [Entity Framework Core](https://learn.microsoft.com/en-us/ef/core/)
-- [JWT Authentication](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/)
+### 1. Complete CRUD Operations
+Every resource (users, rooms, residents, sensors, alerts) can be Created, Read, Updated, and Deleted through the API.
 
-### Third-Party Libraries
-- [BCrypt.Net GitHub](https://github.com/BcryptNet/bcrypt.net) - Password hashing
-- [Swagger/OpenAPI](https://swagger.io/) - API documentation
+### 2. Role-Based Access Control
+Three user roles with different permission levels ensure staff only access what they need.
 
-### Learning Resources
-- Microsoft Learn - ASP.NET Core tutorials
-- Stack Overflow - Various troubleshooting solutions (cited in code comments)
+### 3. Real-Time Sensor Monitoring
+Environmental sensors track temperature and humidity in each room. Abnormal readings trigger automatic alerts.
 
----
+### 4. Alert System
+When something goes wrong (abnormal temperature, humidity, or manual alerts), staff are notified and can document how they resolved the issue.
 
-## 🚀 Deployment
+### 5. Room Management
+Track room capacity, occupancy status, and which residents are assigned to each room.
 
-### Local Deployment
-The application uses SQL Server LocalDB by default for development.
-
-### Cloud Deployment Options
-
-**Azure:**
-1. Create Azure SQL Database
-2. Update connection string
-3. Deploy to Azure App Service
-
-**AWS:**
-1. Create RDS SQL Server instance
-2. Deploy to Elastic Beanstalk or EC2
-
-**DKIT Cloud:**
-Follow institutional guidelines for deployment to internal infrastructure.
+### 6. Responsive Design
+The dashboard works on desktop and mobile devices.
 
 ---
 
-## ✅ CA Requirements Checklist
+## 🧪 Running Unit Tests
 
-- [x] **Requirement 1:** Minimum 4 CRUD services (30%)
-  - Users, Rooms, Residents, SensorData, Alerts - all with full CRUD
-  
-- [x] **Requirement 2:** Authentication/Identity Management (10%)
-  - JWT-based authentication with login and role-based authorization
-  
-- [x] **Requirement 3:** Persistent Storage with Design Patterns (20%)
-  - SQL Server database with EF Core
-  - Repository Pattern + Dependency Injection
-  - 5 tables with one-to-many relationships
-  - DTOs separate from entity models
-  
-- [x] **Requirement 4:** Deployment (10%)
-  - Ready for cloud deployment (Azure/AWS/DKIT)
-  
-- [x] **Requirement 5:** Testing (10%)
-  - Swagger UI for manual testing
-  - Postman collection ready
-  - Unit tests can be added
-  
-- [x] **Requirement 6:** Extra Facilities (20%)
-  - Can add: Mobile app, real-time dashboard, IoT integration
+The project includes automated unit tests for the backend:
+
+```bash
+cd /Users/alex/RiderProjects/CA2_SOA/CA2_SOA.Tests
+dotnet test
+```
+
+This will run all tests and show you which ones passed or failed.
+
+---
+
+## 📝 CA Requirements Met
+
+This project fulfills all the assignment requirements:
+
+✅ **1. Minimum 4 CRUD Services (30%)**
+- 5 complete CRUD services: Users, Rooms, Residents, SensorData, Alerts
+
+✅ **2. Authentication & Authorization (10%)**
+- JWT token-based authentication
+- Role-based access control (Admin, Nurse, Caretaker)
+
+✅ **3. Persistent Storage & Design Patterns (20%)**
+- SQLite database with 5 tables
+- One-to-many relationships (Room → Residents, Room → Sensors, Room → Alerts)
+- Repository Pattern for data access
+- DTOs separate from database models
+- Dependency Injection throughout
+
+✅ **4. Testing (10%)**
+- Postman collection with comprehensive API tests
+- Unit tests for controllers, repositories, and services
+
+✅ **5. Extra Features (20%)**
+- Full React web dashboard
+- Real-time sensor simulation
+- Advanced filtering and search
+- Alert resolution workflow
+- User management panel
+- Role-based UI (different views for different roles)
+
+✅ **6. Deployment Ready**
+- Can be deployed to Azure, AWS, or DKIT cloud
+- Database migrations included
+- Environment configuration set up
+
+---
+
+## 🐛 Troubleshooting
+
+### API won't start
+- Make sure .NET 8.0 SDK is installed: `dotnet --version`
+- Check if port 5000 is already in use
+- Delete `bin` and `obj` folders, then run `dotnet restore`
+
+### Dashboard won't start
+- Make sure Node.js is installed: `node --version`
+- Delete `node_modules` folder and run `npm install` again
+- Check if port 5173 is already in use
+
+### Can't log in
+- Make sure the backend API is running
+- Check the browser console for errors (F12)
+- Verify you're using the correct username/password
+
+### Sensor simulator errors
+- Make sure Python 3 is installed: `python3 --version`
+- Install requests library: `pip3 install requests`
+- Make sure the API is running on http://localhost:5000
 
 ---
 
 ## 👨‍💻 Author
 
-**[Your Name]**  
-Student at Dundalk Institute of Technology  
-Service Oriented Architecture - CA2
+**Alex**  
+Dundalk Institute of Technology  
+Service Oriented Architecture - CA2  
+December 2025
 
 ---
 
