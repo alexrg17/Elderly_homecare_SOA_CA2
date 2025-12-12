@@ -14,18 +14,29 @@ var builder = WebApplication.CreateBuilder(args);
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
-// Add Database Context - Use PostgreSQL in Azure, SQLite locally
-var useAzureDatabase = builder.Configuration.GetValue<bool>("UseAzureDatabase");
+// Add Database Context - Use PostgreSQL in cloud (Railway/Azure), SQLite locally
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL"); // Railway PostgreSQL
 var azurePostgresConnection = builder.Configuration.GetConnectionString("AzurePostgres");
+var useAzureDatabase = builder.Configuration.GetValue<bool>("UseAzureDatabase");
 
 builder.Services.AddDbContext<CareHomeDbContext>(options =>
 {
-    if (useAzureDatabase && !string.IsNullOrEmpty(azurePostgresConnection))
+    if (!string.IsNullOrEmpty(databaseUrl))
     {
+        // Railway PostgreSQL - convert DATABASE_URL to proper connection string
+        var databaseUri = new Uri(databaseUrl);
+        var userInfo = databaseUri.UserInfo.Split(':');
+        var connectionString = $"Host={databaseUri.Host};Port={databaseUri.Port};Database={databaseUri.AbsolutePath.Trim('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+        options.UseNpgsql(connectionString);
+    }
+    else if (useAzureDatabase && !string.IsNullOrEmpty(azurePostgresConnection))
+    {
+        // Azure PostgreSQL
         options.UseNpgsql(azurePostgresConnection);
     }
     else
     {
+        // Local SQLite
         options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
     }
 });
