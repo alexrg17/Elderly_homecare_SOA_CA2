@@ -31,7 +31,7 @@ Console.WriteLine("========================================");
 
 try
 {
-    builder.Services.AddDbContext<CareHomeDbContext>((serviceProvider, options) =>
+    builder.Services.AddDbContext<CareHomeDbContext>(options =>
     {
         try
         {
@@ -42,7 +42,7 @@ try
                 
                 // Railway PostgreSQL - convert DATABASE_URL to proper connection string
                 var databaseUri = new Uri(databaseUrl);
-                var userInfo = databaseUri.UserInfo?.Split(':');
+                var userInfo = databaseUri.UserInfo.Split(':');
                 
                 if (userInfo == null || userInfo.Length < 2)
                 {
@@ -61,28 +61,28 @@ try
                 options.UseNpgsql(connectionString);
                 Console.WriteLine("[Database] ✅ PostgreSQL configured successfully");
             }
-        else if (useAzureDatabase && !string.IsNullOrEmpty(azurePostgresConnection))
-        {
-            Console.WriteLine("[Database] Configuring Azure PostgreSQL...");
-            options.UseNpgsql(azurePostgresConnection);
-            Console.WriteLine("[Database] ✅ Azure PostgreSQL configured successfully");
-        }
-        else
-        {
-            Console.WriteLine("[Database] ⚠️  No DATABASE_URL found - using SQLite fallback");
-            Console.WriteLine("[Database] Note: SQLite data will not persist between deployments on Railway");
-            // Fallback to SQLite with in-memory if file system is not writable
-            var sqliteConnection = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=CareHomeDB.db";
-            options.UseSqlite(sqliteConnection);
-            Console.WriteLine("[Database] ✅ SQLite configured");
-        }
-        
-        // Enable sensitive data logging in development
-        if (builder.Environment.IsDevelopment())
-        {
-            options.EnableSensitiveDataLogging();
-            options.EnableDetailedErrors();
-        }
+            else if (useAzureDatabase && !string.IsNullOrEmpty(azurePostgresConnection))
+            {
+                Console.WriteLine("[Database] Configuring Azure PostgreSQL...");
+                options.UseNpgsql(azurePostgresConnection);
+                Console.WriteLine("[Database] ✅ Azure PostgreSQL configured successfully");
+            }
+            else
+            {
+                Console.WriteLine("[Database] ⚠️  No DATABASE_URL found - using SQLite fallback");
+                Console.WriteLine("[Database] Note: SQLite data will not persist between deployments on Railway");
+                // Fallback to SQLite with in-memory if file system is not writable
+                var sqliteConnection = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=CareHomeDB.db";
+                options.UseSqlite(sqliteConnection);
+                Console.WriteLine("[Database] ✅ SQLite configured");
+            }
+            
+            // Enable sensitive data logging in development
+            if (builder.Environment.IsDevelopment())
+            {
+                options.EnableSensitiveDataLogging();
+                options.EnableDetailedErrors();
+            }
         }
         catch (Exception ex)
         {
@@ -233,28 +233,55 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = string.Empty; // Swagger UI at root
 });
 
-// Initialize Database with retry logic
-using (var scope = app.Services.CreateScope())
+// Initialize Database with comprehensive error handling
+Console.WriteLine("[Database Init] Starting database initialization...");
+try
 {
+    using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
-    var logger = services.GetRequiredService<ILogger<Program>>();
     
     try
     {
-        logger.LogInformation("Attempting to initialize database...");
+        Console.WriteLine("[Database Init] Getting DbContext...");
         var context = services.GetRequiredService<CareHomeDbContext>();
         
-        // Ensure database is created and migrations are applied
-        context.Database.EnsureCreated();
-        logger.LogInformation("✅ Database initialized successfully!");
+        Console.WriteLine("[Database Init] Testing database connection...");
+        // Test if we can connect to the database
+        var canConnect = context.Database.CanConnect();
+        Console.WriteLine($"[Database Init] Can connect: {canConnect}");
+        
+        if (canConnect)
+        {
+            Console.WriteLine("[Database Init] Ensuring database is created...");
+            // Ensure database is created and migrations are applied
+            context.Database.EnsureCreated();
+            Console.WriteLine("[Database Init] ✅ Database initialized successfully!");
+        }
+        else
+        {
+            Console.WriteLine("[Database Init] ⚠️  Cannot connect to database. App will start without database initialization.");
+        }
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "❌ An error occurred creating the database. Application will continue without database.");
-        logger.LogError($"Error details: {ex.Message}");
-        logger.LogError($"Stack trace: {ex.StackTrace}");
+        Console.WriteLine($"[Database Init] ❌ ERROR during database initialization!");
+        Console.WriteLine($"[Database Init] Error Type: {ex.GetType().Name}");
+        Console.WriteLine($"[Database Init] Error Message: {ex.Message}");
+        if (ex.InnerException != null)
+        {
+            Console.WriteLine($"[Database Init] Inner Exception: {ex.InnerException.Message}");
+        }
+        Console.WriteLine("[Database Init] ⚠️  Application will continue without database initialization.");
+        Console.WriteLine("[Database Init] Database will be created on first request.");
     }
 }
+catch (Exception criticalEx)
+{
+    Console.WriteLine($"[Database Init] ❌ CRITICAL ERROR: Failed to create service scope!");
+    Console.WriteLine($"[Database Init] Error: {criticalEx.Message}");
+    Console.WriteLine("[Database Init] Application will continue, but database may not work correctly.");
+}
+Console.WriteLine("[Database Init] Initialization phase completed.");
 
 // Only use HTTPS redirection in production with proper certificates
 if (!app.Environment.IsDevelopment())
