@@ -7,9 +7,11 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: parseInt(process.env.PORT || '5173'),
+    allowedHosts: ['secure-comfort-production-8560.up.railway.app'],
   },
   preview: {
     host: '0.0.0.0',
     port: parseInt(process.env.PORT || '4173'),
+    allowedHosts: ['secure-comfort-production-8560.up.railway.app'],
   },
 })
