@@ -404,55 +404,45 @@ Console.WriteLine($"📖 Environment: {app.Environment.EnvironmentName}");
 Console.WriteLine("✅ All services configured successfully!");
 Console.WriteLine("========================================");
 
-// Initialize database in background task so app starts immediately
-_ = Task.Run(async () =>
+// Initialize database synchronously before starting the app
+Console.WriteLine("[Database Init] Initializing database...");
+try
 {
-    await Task.Delay(1000); // Wait 1 second for app to start
-    Console.WriteLine("[Database Init] Starting background database initialization...");
-    
-    var maxRetries = 3;
-    var retryCount = 0;
-    var dbInitialized = false;
-    
-    while (retryCount < maxRetries && !dbInitialized)
+    using (var scope = app.Services.CreateScope())
     {
-        try
+        var services = scope.ServiceProvider;
+        var context = services.GetRequiredService<CareHomeDbContext>();
+        
+        Console.WriteLine("[Database Init] Testing database connection...");
+        var canConnect = context.Database.CanConnect();
+        Console.WriteLine($"[Database Init] Can connect: {canConnect}");
+        
+        if (canConnect)
         {
-            using var scope = app.Services.CreateScope();
-            var services = scope.ServiceProvider;
-            var context = services.GetRequiredService<CareHomeDbContext>();
+            Console.WriteLine("[Database Init] Creating database schema and tables...");
+            context.Database.EnsureCreated();
+            Console.WriteLine("[Database Init] ✅ Database initialized successfully!");
             
-            Console.WriteLine($"[Database Init] Attempt {retryCount + 1}/{maxRetries} - Testing database connection...");
-            
-            var canConnect = await context.Database.CanConnectAsync();
-            Console.WriteLine($"[Database Init] Can connect: {canConnect}");
-            
-            if (canConnect)
-            {
-                Console.WriteLine("[Database Init] Creating database schema...");
-                await context.Database.EnsureCreatedAsync();
-                Console.WriteLine("[Database Init] ✅ Database initialized successfully!");
-                dbInitialized = true;
-            }
-            else
-            {
-                Console.WriteLine("[Database Init] ⚠️  Cannot connect to database. Retrying...");
-                retryCount++;
-            }
+            // Check if tables were created
+            var tableCount = context.Model.GetEntityTypes().Count();
+            Console.WriteLine($"[Database Init] Entity types configured: {tableCount}");
         }
-        catch (Exception ex)
+        else
         {
-            retryCount++;
-            Console.WriteLine($"[Database Init] ❌ Error on attempt {retryCount}/{maxRetries}");
-            Console.WriteLine($"[Database Init] Error: {ex.Message}");
-            
-            if (retryCount >= maxRetries)
-            {
-                Console.WriteLine("[Database Init] ⚠️  Max retries reached. Database will be created on first API request.");
-            }
+            Console.WriteLine("[Database Init] ⚠️  Cannot connect to database at startup.");
         }
     }
-});
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Database Init] ❌ Database initialization error: {ex.Message}");
+    Console.WriteLine($"[Database Init] Stack trace: {ex.StackTrace}");
+    if (ex.InnerException != null)
+    {
+        Console.WriteLine($"[Database Init] Inner exception: {ex.InnerException.Message}");
+    }
+    Console.WriteLine("[Database Init] ⚠️  App will continue without database initialization.");
+}
 
 Console.WriteLine("[App Start] Calling app.Run()...");
 
