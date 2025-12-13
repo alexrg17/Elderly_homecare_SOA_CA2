@@ -10,6 +10,15 @@ using CA2_SOA.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Host FIRST to prevent service validation during build (which tries to connect to database)
+Console.WriteLine("[Startup] Configuring service provider to skip validation...");
+builder.Host.UseDefaultServiceProvider(options =>
+{
+    options.ValidateScopes = false;
+    options.ValidateOnBuild = false;
+});
+Console.WriteLine("[Startup] ✅ Service provider validation disabled");
+
 // ASP.NET Core will automatically use the PORT environment variable
 // No need to manually configure Kestrel - Railway sets ASPNETCORE_URLS automatically
 
@@ -125,23 +134,6 @@ try
 catch (Exception ex)
 {
     Console.WriteLine($"[Service Registration] ❌ Controllers failed: {ex.Message}");
-    throw;
-}
-
-// Configure Host to not validate scopes on startup (prevents database connection during startup)
-Console.WriteLine("[Service Registration] Configuring service provider validation...");
-try
-{
-    builder.Host.UseDefaultServiceProvider(options =>
-    {
-        options.ValidateScopes = false;
-        options.ValidateOnBuild = false;
-    });
-    Console.WriteLine("[Service Registration] ✅ Service provider configured");
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"[Service Registration] ❌ Service provider config failed: {ex.Message}");
     throw;
 }
 
@@ -297,11 +289,53 @@ Console.WriteLine("========================================");
 Console.WriteLine("[App Build] Building application...");
 Console.WriteLine("========================================");
 
-var app = builder.Build();
-
-Console.WriteLine("========================================");
-Console.WriteLine("[App Build] ✅ Application built successfully!");
-Console.WriteLine("========================================");
+WebApplication app;
+try
+{
+    app = builder.Build();
+    Console.WriteLine("========================================");
+    Console.WriteLine("[App Build] ✅ Application built successfully!");
+    Console.WriteLine("========================================");
+}
+catch (Exception buildEx)
+{
+    Console.WriteLine("========================================");
+    Console.WriteLine("[App Build] ❌ CRITICAL: Application build FAILED!");
+    Console.WriteLine($"[App Build] Error Type: {buildEx.GetType().FullName}");
+    Console.WriteLine($"[App Build] Error Message: {buildEx.Message}");
+    
+    if (buildEx.InnerException != null)
+    {
+        Console.WriteLine($"[App Build] Inner Exception Type: {buildEx.InnerException.GetType().FullName}");
+        Console.WriteLine($"[App Build] Inner Exception: {buildEx.InnerException.Message}");
+        
+        if (buildEx.InnerException.InnerException != null)
+        {
+            Console.WriteLine($"[App Build] Inner Inner Exception: {buildEx.InnerException.InnerException.Message}");
+        }
+    }
+    
+    Console.WriteLine($"[App Build] Stack Trace:");
+    Console.WriteLine(buildEx.StackTrace);
+    Console.WriteLine("========================================");
+    
+    // Try to build with minimal configuration as last resort
+    Console.WriteLine("[App Build] Attempting to rebuild with minimal configuration...");
+    
+    try
+    {
+        var minimalBuilder = WebApplication.CreateBuilder(args);
+        minimalBuilder.Host.UseDefaultServiceProvider(opt => { opt.ValidateScopes = false; opt.ValidateOnBuild = false; });
+        minimalBuilder.Services.AddControllers();
+        app = minimalBuilder.Build();
+        Console.WriteLine("[App Build] ⚠️  Minimal app built - limited functionality available");
+    }
+    catch
+    {
+        Console.WriteLine("[App Build] ❌ Even minimal build failed. Exiting.");
+        throw;
+    }
+}
 
 // Configure the HTTP request pipeline
 Console.WriteLine("[Middleware] Configuring HTTP request pipeline...");
