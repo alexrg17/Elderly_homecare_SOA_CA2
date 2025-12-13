@@ -146,24 +146,34 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = string.Empty; // Swagger UI at root
 });
 
-// Initialize Database
+// Initialize Database with retry logic
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    
     try
     {
+        logger.LogInformation("Attempting to initialize database...");
         var context = services.GetRequiredService<CareHomeDbContext>();
+        
         // Ensure database is created and migrations are applied
         context.Database.EnsureCreated();
-        Console.WriteLine("Database initialized successfully!");
+        logger.LogInformation("✅ Database initialized successfully!");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"An error occurred creating the DB: {ex.Message}");
+        logger.LogError(ex, "❌ An error occurred creating the database. Application will continue without database.");
+        logger.LogError($"Error details: {ex.Message}");
+        logger.LogError($"Stack trace: {ex.StackTrace}");
     }
 }
 
-app.UseHttpsRedirection();
+// Only use HTTPS redirection in production with proper certificates
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCors("AllowAll");
 
@@ -172,9 +182,20 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-Console.WriteLine("🏥 Elderly Care Home Monitoring API is running!");
-Console.WriteLine("📖 Swagger UI: https://localhost:{port} or http://localhost:{port}");
-Console.WriteLine("🔐 Default Admin - Username: admin, Password: Admin123!");
+// Add health check endpoint
+app.MapGet("/health", () => Results.Ok(new { 
+    status = "healthy", 
+    timestamp = DateTime.UtcNow,
+    environment = app.Environment.EnvironmentName 
+}));
+
+app.MapGet("/", () => Results.Redirect("/swagger"));
+
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("🏥 Elderly Care Home Monitoring API is starting...");
+logger.LogInformation($"📖 Environment: {app.Environment.EnvironmentName}");
+logger.LogInformation($"🔐 Default Admin - Username: admin, Password: admin123");
+logger.LogInformation("✅ Application started successfully!");
 
 app.Run();
 
