@@ -123,3 +123,5 @@ care-home-dashboard/dist/
 care-home-dashboard/.env
 care-home-dashboard/.env.local
 
+# Local configuration overrides
+appsettings.Local.json

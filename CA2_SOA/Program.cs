@@ -10,6 +10,16 @@ using CA2_SOA.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+builder.Configuration.AddEnvironmentVariables();
+
+// Configure Kestrel to use Railway's PORT environment variable
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(int.Parse(port));
+});
+
 // Configure Host FIRST to prevent service validation during build (which tries to connect to database)
 Console.WriteLine("[Startup] Configuring service provider to skip validation...");
 builder.Host.UseDefaultServiceProvider(options =>
@@ -19,11 +29,22 @@ builder.Host.UseDefaultServiceProvider(options =>
 });
 Console.WriteLine("[Startup] ✅ Service provider validation disabled");
 
-// ASP.NET Core will automatically use the PORT environment variable
-// No need to manually configure Kestrel - Railway sets ASPNETCORE_URLS automatically
 
 // Add Database Context - Use Railway PostgreSQL in production, SQLite locally
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL"); // Railway PostgreSQL
+
+string ResolveSqliteConnection()
+{
+    var sqliteConnection = builder.Configuration.GetConnectionString("Sqlite")
+        ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
+    if (string.IsNullOrWhiteSpace(sqliteConnection))
+    {
+        throw new InvalidOperationException("Missing SQLite connection string. Configure ConnectionStrings:Sqlite via appsettings.Local.json or environment variables.");
+    }
+
+    return sqliteConnection;
+}
 
 Console.WriteLine("========================================");
 Console.WriteLine("[Startup] Elderly Care Home API Starting");
@@ -41,7 +62,6 @@ try
             if (!string.IsNullOrEmpty(databaseUrl))
             {
                 Console.WriteLine("[Database] Configuring Railway PostgreSQL...");
-                Console.WriteLine($"[Database] DATABASE_URL format: {databaseUrl.Substring(0, Math.Min(30, databaseUrl.Length))}...");
                 
                 // Railway PostgreSQL - convert DATABASE_URL to proper connection string
                 var databaseUri = new Uri(databaseUrl);
@@ -68,7 +88,7 @@ try
             {
                 Console.WriteLine("[Database] ⚠️  No DATABASE_URL found - using SQLite fallback");
                 Console.WriteLine("[Database] Note: SQLite data will not persist between deployments");
-                var sqliteConnection = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=CareHomeDB.db";
+                var sqliteConnection = ResolveSqliteConnection();
                 options.UseSqlite(sqliteConnection);
                 Console.WriteLine("[Database] ✅ SQLite configured");
             }
@@ -94,7 +114,7 @@ try
             // Final fallback to SQLite
             try
             {
-                options.UseSqlite("Data Source=CareHomeDB.db");
+                options.UseSqlite(ResolveSqliteConnection());
                 Console.WriteLine("[Database] ✅ SQLite fallback configured");
             }
             catch (Exception fallbackEx)
@@ -119,7 +139,7 @@ catch (Exception startupEx)
     Console.WriteLine("[Startup] Attempting emergency SQLite fallback...");
     builder.Services.AddDbContext<CareHomeDbContext>(options =>
     {
-        options.UseSqlite("Data Source=CareHomeDB.db");
+        options.UseSqlite(ResolveSqliteConnection());
     });
     Console.WriteLine("[Startup] ✅ Emergency SQLite DbContext registered");
 }
@@ -200,7 +220,11 @@ catch (Exception ex)
 Console.WriteLine("[Service Registration] Configuring JWT Authentication...");
 try
 {
-    var jwtKey = builder.Configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLongForJWT!";
+    var jwtKey = builder.Configuration["Jwt:Key"];
+    if (string.IsNullOrWhiteSpace(jwtKey))
+    {
+        throw new InvalidOperationException("JWT signing key not configured. Set Jwt:Key via environment variables or appsettings.Local.json");
+    }
     var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "CareHomeAPI";
     var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "CareHomeClient";
 
@@ -404,75 +428,151 @@ Console.WriteLine($"📖 Environment: {app.Environment.EnvironmentName}");
 Console.WriteLine("✅ All services configured successfully!");
 Console.WriteLine("========================================");
 
-// Initialize database synchronously before starting the app
+// Initialize database with retry logic for Railway PostgreSQL startup delays
 Console.WriteLine("[Database Init] Initializing database...");
-try
+bool dbInitialized = false;
+int maxRetries = 5;
+int retryDelayMs = 2000;
+
+for (int attempt = 1; attempt <= maxRetries && !dbInitialized; attempt++)
 {
-    using (var scope = app.Services.CreateScope())
+    try
     {
-        var services = scope.ServiceProvider;
-        var context = services.GetRequiredService<CareHomeDbContext>();
-        
-        Console.WriteLine("[Database Init] Testing database connection...");
-        var canConnect = context.Database.CanConnect();
-        Console.WriteLine($"[Database Init] Can connect: {canConnect}");
-        
-        if (canConnect)
+        using (var scope = app.Services.CreateScope())
         {
-            Console.WriteLine("[Database Init] Creating database schema and tables...");
+            var services = scope.ServiceProvider;
+            var context = services.GetRequiredService<CareHomeDbContext>();
             
-            // Log the entity types that will be created
-            var entityTypes = context.Model.GetEntityTypes().ToList();
-            Console.WriteLine($"[Database Init] Entities to create: {string.Join(", ", entityTypes.Select(e => e.ClrType.Name))}");
+            Console.WriteLine($"[Database Init] Attempt {attempt}/{maxRetries}: Testing database connection...");
+            var canConnect = await context.Database.CanConnectAsync();
+            Console.WriteLine($"[Database Init] Can connect: {canConnect}");
             
-            // Check if database already exists
-            var dbExists = context.Database.CanConnect();
-            Console.WriteLine($"[Database Init] Database exists: {dbExists}");
-            
-            // Try to create the database
-            var created = context.Database.EnsureCreated();
-            Console.WriteLine($"[Database Init] EnsureCreated returned: {created}");
-            
-            if (created)
+            if (canConnect)
             {
-                Console.WriteLine("[Database Init] ✅ Database schema was created!");
+                Console.WriteLine("[Database Init] Creating database schema and tables...");
+                
+                // Use migrations in production, EnsureCreated for development
+                if (app.Environment.IsDevelopment())
+                {
+                    var created = context.Database.EnsureCreated();
+                    Console.WriteLine($"[Database Init] EnsureCreated returned: {created}");
+                }
+                else
+                {
+                    // In production, apply migrations
+                    var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+                    if (pendingMigrations.Any())
+                    {
+                        Console.WriteLine($"[Database Init] Applying {pendingMigrations.Count()} pending migrations...");
+                        await context.Database.MigrateAsync();
+                        Console.WriteLine("[Database Init] ✅ Migrations applied successfully");
+                    }
+                    else
+                    {
+                        Console.WriteLine("[Database Init] No pending migrations");
+                        // Ensure database is created even if no migrations
+                        var created = context.Database.EnsureCreated();
+                        Console.WriteLine($"[Database Init] EnsureCreated returned: {created}");
+                    }
+                }
+                
+                // Verify tables were created by trying to query one
+                try
+                {
+                    var userCount = await context.Users.CountAsync();
+                    Console.WriteLine($"[Database Init] ✅ Users table exists with {userCount} records");
+                    dbInitialized = true;
+                }
+                catch (Exception tableEx)
+                {
+                    Console.WriteLine($"[Database Init] ❌ Users table verification failed: {tableEx.Message}");
+                    throw; // Retry
+                }
             }
             else
             {
-                Console.WriteLine("[Database Init] ⚠️  Database already existed or no changes were made");
+                Console.WriteLine($"[Database Init] ⚠️  Cannot connect to database (attempt {attempt}/{maxRetries})");
+                if (attempt < maxRetries)
+                {
+                    Console.WriteLine($"[Database Init] Waiting {retryDelayMs}ms before retry...");
+                    await Task.Delay(retryDelayMs);
+                }
             }
-            
-            // Verify tables were created by trying to query one
-            try
-            {
-                var userCount = context.Users.Count();
-                Console.WriteLine($"[Database Init] ✅ Users table exists with {userCount} records");
-            }
-            catch (Exception tableEx)
-            {
-                Console.WriteLine($"[Database Init] ❌ Users table verification failed: {tableEx.Message}");
-            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Database Init] ❌ Database initialization error (attempt {attempt}/{maxRetries}): {ex.Message}");
+        if (ex.InnerException != null)
+        {
+            Console.WriteLine($"[Database Init] Inner exception: {ex.InnerException.Message}");
+        }
+        
+        if (attempt < maxRetries)
+        {
+            Console.WriteLine($"[Database Init] Waiting {retryDelayMs}ms before retry...");
+            await Task.Delay(retryDelayMs);
         }
         else
         {
-            Console.WriteLine("[Database Init] ⚠️  Cannot connect to database at startup.");
+            Console.WriteLine("[Database Init] ⚠️  Max retries reached. App will continue without database initialization.");
+            Console.WriteLine("[Database Init] Database will be initialized on first request if needed.");
         }
     }
 }
-catch (Exception ex)
+
+if (dbInitialized)
 {
-    Console.WriteLine($"[Database Init] ❌ Database initialization error: {ex.Message}");
-    Console.WriteLine($"[Database Init] Stack trace: {ex.StackTrace}");
-    if (ex.InnerException != null)
-    {
-        Console.WriteLine($"[Database Init] Inner exception: {ex.InnerException.Message}");
-    }
-    Console.WriteLine("[Database Init] ⚠️  App will continue without database initialization.");
+    Console.WriteLine("[Database Init] ✅ Database initialized successfully!");
+}
+else
+{
+    Console.WriteLine("[Database Init] ⚠️  Database initialization incomplete - will retry on first request");
 }
 
+// Register application lifetime events
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+lifetime.ApplicationStarted.Register(() =>
+{
+    Console.WriteLine("========================================");
+    Console.WriteLine("[App Lifetime] ✅ Application has STARTED successfully!");
+    Console.WriteLine($"[App Lifetime] Listening on port: {Environment.GetEnvironmentVariable("PORT") ?? "8080"}");
+    Console.WriteLine($"[App Lifetime] Process ID: {Environment.ProcessId}");
+    Console.WriteLine("========================================");
+});
+
+lifetime.ApplicationStopping.Register(() =>
+{
+    Console.WriteLine("========================================");
+    Console.WriteLine("[App Lifetime] ⚠️  Application is STOPPING!");
+    Console.WriteLine($"[App Lifetime] Process ID: {Environment.ProcessId}");
+    Console.WriteLine("========================================");
+});
+
+lifetime.ApplicationStopped.Register(() =>
+{
+    Console.WriteLine("========================================");
+    Console.WriteLine("[App Lifetime] ❌ Application has STOPPED!");
+    Console.WriteLine("========================================");
+});
+
 Console.WriteLine("[App Start] Calling app.Run()...");
+Console.WriteLine("[App Start] This will block until the application shuts down...");
 
-app.Run();
+try
+{
+    app.Run();
+}
+catch (Exception runEx)
+{
+    Console.WriteLine("========================================");
+    Console.WriteLine("[App Start] ❌ Exception during app.Run()!");
+    Console.WriteLine($"[App Start] Exception: {runEx.GetType().FullName}");
+    Console.WriteLine($"[App Start] Message: {runEx.Message}");
+    Console.WriteLine($"[App Start] Stack: {runEx.StackTrace}");
+    Console.WriteLine("========================================");
+    throw;
+}
 
-Console.WriteLine("[App Start] ⚠️  app.Run() returned (this should never happen)");
+Console.WriteLine("[App Start] ⚠️  app.Run() returned (this should never happen in normal operation)");
 

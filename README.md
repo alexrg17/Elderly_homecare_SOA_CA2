@@ -227,7 +227,7 @@ CA2_SOA/
 │   ├── DTOs/                         # Data transfer objects
 │   ├── Repositories/                 # Database access layer
 │   ├── Services/                     # Business logic
-│   ├── CareHomeDB.db                 # SQLite database file
+│   ├── CareHomeDB.db                 # SQLite database file (local dev only, gitignored)
 │   └── Program.cs                    # API startup
 │
 ├── care-home-dashboard/              # Frontend React app
@@ -384,4 +384,3 @@ December 2025
 ## 📄 License
 
 This project is for educational purposes as part of DkIT coursework.
-

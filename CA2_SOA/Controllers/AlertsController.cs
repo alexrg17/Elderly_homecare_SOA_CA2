@@ -196,30 +196,31 @@ public class AlertsController : ControllerBase
             IsResolved = false
         };
         
-        var created = await _alertRepository.CreateAsync(alert);
+        var createdEntity = await _alertRepository.CreateAsync(alert);
         
-        // Reload to get Room navigation property
-        var createdWithRoom = await _alertRepository.GetByIdAsync(created.Id);
+        var alertWithRoom = createdEntity.Room != null
+            ? createdEntity
+            : await _alertRepository.GetByIdAsync(createdEntity.Id);
         
-        if (createdWithRoom == null)
+        if (alertWithRoom == null || alertWithRoom.Room == null)
             return StatusCode(500, new { message = "Error retrieving created alert" });
         
         var alertDto = new AlertDto(
-            createdWithRoom.Id,
-            createdWithRoom.RoomId,
-            createdWithRoom.Room.RoomNumber,
-            createdWithRoom.AlertType,
-            createdWithRoom.Severity,
-            createdWithRoom.Message,
-            createdWithRoom.CreatedAt,
-            createdWithRoom.IsResolved,
-            createdWithRoom.ResolvedAt,
-            createdWithRoom.ResolvedByUserId,
+            alertWithRoom.Id,
+            alertWithRoom.RoomId,
+            alertWithRoom.Room.RoomNumber,
+            alertWithRoom.AlertType,
+            alertWithRoom.Severity,
+            alertWithRoom.Message,
+            alertWithRoom.CreatedAt,
+            alertWithRoom.IsResolved,
+            alertWithRoom.ResolvedAt,
+            alertWithRoom.ResolvedByUserId,
             null,
-            createdWithRoom.ResolutionNotes
+            alertWithRoom.ResolutionNotes
         );
         
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, alertDto);
+        return CreatedAtAction(nameof(GetById), new { id = alertWithRoom.Id }, alertDto);
     }
     
     /// <summary>

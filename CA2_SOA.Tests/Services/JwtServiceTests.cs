@@ -19,7 +19,7 @@ public class JwtServiceTests
     {
         var inMemorySettings = new Dictionary<string, string>
         {
-            {"Jwt:Key", "YourSuperSecretKeyThatIsAtLeast32CharactersLongForTesting!"},
+            {"Jwt:Key", "TestKeyMustBeAtLeast32CharactersLong!!!"},
             {"Jwt:Issuer", "CareHomeAPI"},
             {"Jwt:Audience", "CareHomeClient"}
         };
@@ -123,4 +123,3 @@ public class JwtServiceTests
         principal.Identity!.IsAuthenticated.Should().BeTrue();
     }
 }
-

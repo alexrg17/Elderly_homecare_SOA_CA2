@@ -29,9 +29,13 @@ public class JwtService
             new Claim("FullName", user.FullName)
         };
         
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong!")
-        );
+        var configuredKey = _configuration["Jwt:Key"];
+        if (string.IsNullOrWhiteSpace(configuredKey))
+        {
+            throw new InvalidOperationException("JWT signing key not configured. Set Jwt:Key via environment variables or appsettings.Local.json");
+        }
+        
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuredKey));
         
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         
@@ -51,7 +55,12 @@ public class JwtService
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong!");
+            var configuredKey = _configuration["Jwt:Key"];
+            if (string.IsNullOrWhiteSpace(configuredKey))
+            {
+                throw new InvalidOperationException("JWT signing key not configured. Set Jwt:Key via environment variables or appsettings.Local.json");
+            }
+            var key = Encoding.UTF8.GetBytes(configuredKey);
             
             var validationParameters = new TokenValidationParameters
             {
@@ -73,4 +82,3 @@ public class JwtService
         }
     }
 }
-
