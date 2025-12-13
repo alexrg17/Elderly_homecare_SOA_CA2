@@ -1,9 +1,0 @@
-[build]
-builder = "nixpacks"
-buildCommand = "cd CA2_SOA && /opt/dotnet/dotnet publish --configuration Release --output ../out --self-contained false"
-
-[deploy]
-startCommand = "cd out && /opt/dotnet/dotnet CA2_SOA.dll"
-restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 3
-
