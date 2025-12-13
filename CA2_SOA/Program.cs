@@ -420,12 +420,38 @@ try
         if (canConnect)
         {
             Console.WriteLine("[Database Init] Creating database schema and tables...");
-            context.Database.EnsureCreated();
-            Console.WriteLine("[Database Init] ✅ Database initialized successfully!");
             
-            // Check if tables were created
-            var tableCount = context.Model.GetEntityTypes().Count();
-            Console.WriteLine($"[Database Init] Entity types configured: {tableCount}");
+            // Log the entity types that will be created
+            var entityTypes = context.Model.GetEntityTypes().ToList();
+            Console.WriteLine($"[Database Init] Entities to create: {string.Join(", ", entityTypes.Select(e => e.ClrType.Name))}");
+            
+            // Check if database already exists
+            var dbExists = context.Database.CanConnect();
+            Console.WriteLine($"[Database Init] Database exists: {dbExists}");
+            
+            // Try to create the database
+            var created = context.Database.EnsureCreated();
+            Console.WriteLine($"[Database Init] EnsureCreated returned: {created}");
+            
+            if (created)
+            {
+                Console.WriteLine("[Database Init] ✅ Database schema was created!");
+            }
+            else
+            {
+                Console.WriteLine("[Database Init] ⚠️  Database already existed or no changes were made");
+            }
+            
+            // Verify tables were created by trying to query one
+            try
+            {
+                var userCount = context.Users.Count();
+                Console.WriteLine($"[Database Init] ✅ Users table exists with {userCount} records");
+            }
+            catch (Exception tableEx)
+            {
+                Console.WriteLine($"[Database Init] ❌ Users table verification failed: {tableEx.Message}");
+            }
         }
         else
         {
