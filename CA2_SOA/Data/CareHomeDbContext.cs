@@ -61,8 +61,11 @@ public class CareHomeDbContext : DbContext
     
     private void SeedData(ModelBuilder modelBuilder)
     {
-        // Use fixed UTC datetime for seed data (PostgreSQL requires UTC timestamps)
-        var seedDate = new DateTime(2025, 12, 9, 19, 27, 22, DateTimeKind.Utc);
+        // Helper to enforce UTC timestamps for PostgreSQL compatibility
+        static DateTime UtcDate(int year, int month, int day, int hour = 0, int minute = 0, int second = 0)
+            => DateTime.SpecifyKind(new DateTime(year, month, day, hour, minute, second), DateTimeKind.Utc);
+        
+        var seedDate = UtcDate(2025, 12, 9, 19, 27, 22);
         
         // Seed default admin user (password: Admin123!)
         modelBuilder.Entity<User>().HasData(
@@ -131,11 +134,11 @@ public class CareHomeDbContext : DbContext
                 Id = 1,
                 FirstName = "Mary",
                 LastName = "Johnson",
-                DateOfBirth = new DateTime(1940, 5, 15),
+                DateOfBirth = UtcDate(1940, 5, 15),
                 MedicalConditions = "Diabetes, High Blood Pressure",
                 EmergencyContact = "Sarah Johnson (Daughter)",
                 EmergencyPhone = "+353-87-1234567",
-                AdmissionDate = new DateTime(2023, 1, 10),
+                AdmissionDate = UtcDate(2023, 1, 10),
                 RoomId = 1,
                 IsActive = true
             },
@@ -144,11 +147,11 @@ public class CareHomeDbContext : DbContext
                 Id = 2,
                 FirstName = "James",
                 LastName = "O'Brien",
-                DateOfBirth = new DateTime(1938, 11, 22),
+                DateOfBirth = UtcDate(1938, 11, 22),
                 MedicalConditions = "Arthritis, Dementia",
                 EmergencyContact = "Michael O'Brien (Son)",
                 EmergencyPhone = "+353-86-9876543",
-                AdmissionDate = new DateTime(2023, 3, 5),
+                AdmissionDate = UtcDate(2023, 3, 5),
                 RoomId = 2,
                 IsActive = true
             }
@@ -200,4 +203,3 @@ public class CareHomeDbContext : DbContext
         );
     }
 }
-
