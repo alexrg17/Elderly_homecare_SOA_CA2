@@ -165,9 +165,14 @@ try
     {
         options.AddPolicy("AllowAll", policy =>
         {
-            policy.AllowAnyOrigin()
+            policy.WithOrigins(
+                      "https://care-home-dashboard-production.up.railway.app", // Replace with your actual frontend URL
+                      "http://localhost:5173",
+                      "http://localhost:5174"
+                  )
                   .AllowAnyMethod()
-                  .AllowAnyHeader();
+                  .AllowAnyHeader()
+                  .AllowCredentials();
         });
     });
     Console.WriteLine("[Service Registration] ✅ CORS added");
