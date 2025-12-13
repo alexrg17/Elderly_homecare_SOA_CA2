@@ -191,11 +191,10 @@ app.MapGet("/health", () => Results.Ok(new {
 
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
-var logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.LogInformation("🏥 Elderly Care Home Monitoring API is starting...");
-logger.LogInformation($"📖 Environment: {app.Environment.EnvironmentName}");
-logger.LogInformation($"🔐 Default Admin - Username: admin, Password: admin123");
-logger.LogInformation("✅ Application started successfully!");
+Console.WriteLine("🏥 Elderly Care Home Monitoring API is starting...");
+Console.WriteLine($"📖 Environment: {app.Environment.EnvironmentName}");
+Console.WriteLine($"🔐 Default Admin - Username: admin, Password: admin123");
+Console.WriteLine("✅ Application started successfully!");
 
 app.Run();
 
