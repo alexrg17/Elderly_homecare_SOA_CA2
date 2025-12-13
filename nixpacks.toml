@@ -1,6 +1,6 @@
+providers = []
+
 [phases.setup]
-# Disable nixpacks auto-detection by not using any nix packages
-# Install all required dependencies for .NET runtime
 aptPkgs = ["wget", "libicu74", "ca-certificates", "libc6", "libgcc1", "libgssapi-krb5-2", "libssl3", "libstdc++6", "zlib1g"]
 
 [phases.install]
