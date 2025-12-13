@@ -357,62 +357,6 @@ catch (Exception ex)
     Console.WriteLine($"[Middleware] ❌ Swagger failed: {ex.Message}");
 }
 
-// Initialize Database with retry logic for PostgreSQL
-Console.WriteLine("[Database Init] Starting database initialization...");
-var maxRetries = 3;
-var retryCount = 0;
-var dbInitialized = false;
-
-while (retryCount < maxRetries && !dbInitialized)
-{
-    try
-    {
-        using var scope = app.Services.CreateScope();
-        var services = scope.ServiceProvider;
-        var context = services.GetRequiredService<CareHomeDbContext>();
-        
-        Console.WriteLine($"[Database Init] Attempt {retryCount + 1}/{maxRetries} - Testing database connection...");
-        
-        // Test connection
-        var canConnect = context.Database.CanConnect();
-        Console.WriteLine($"[Database Init] Can connect: {canConnect}");
-        
-        if (canConnect)
-        {
-            Console.WriteLine("[Database Init] Creating database schema...");
-            context.Database.EnsureCreated();
-            Console.WriteLine("[Database Init] ✅ Database initialized successfully!");
-            dbInitialized = true;
-        }
-        else
-        {
-            Console.WriteLine("[Database Init] ⚠️  Cannot connect to database. Retrying...");
-            retryCount++;
-            if (retryCount < maxRetries)
-            {
-                Thread.Sleep(2000); // Wait 2 seconds before retry
-            }
-        }
-    }
-    catch (Exception ex)
-    {
-        retryCount++;
-        Console.WriteLine($"[Database Init] ❌ Error on attempt {retryCount}/{maxRetries}");
-        Console.WriteLine($"[Database Init] Error: {ex.Message}");
-        
-        if (retryCount < maxRetries)
-        {
-            Console.WriteLine($"[Database Init] Retrying in 2 seconds...");
-            Thread.Sleep(2000);
-        }
-        else
-        {
-            Console.WriteLine("[Database Init] ⚠️  Max retries reached. App will start without database.");
-            Console.WriteLine("[Database Init] Database will be created on first API request.");
-        }
-    }
-}
-
 // Only use HTTPS redirection in production with proper certificates
 Console.WriteLine("[Middleware] Configuring HTTPS redirection...");
 if (!app.Environment.IsDevelopment())
@@ -459,6 +403,57 @@ Console.WriteLine("🏥 Elderly Care Home Monitoring API");
 Console.WriteLine($"📖 Environment: {app.Environment.EnvironmentName}");
 Console.WriteLine("✅ All services configured successfully!");
 Console.WriteLine("========================================");
+
+// Initialize database in background task so app starts immediately
+_ = Task.Run(async () =>
+{
+    await Task.Delay(1000); // Wait 1 second for app to start
+    Console.WriteLine("[Database Init] Starting background database initialization...");
+    
+    var maxRetries = 3;
+    var retryCount = 0;
+    var dbInitialized = false;
+    
+    while (retryCount < maxRetries && !dbInitialized)
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var services = scope.ServiceProvider;
+            var context = services.GetRequiredService<CareHomeDbContext>();
+            
+            Console.WriteLine($"[Database Init] Attempt {retryCount + 1}/{maxRetries} - Testing database connection...");
+            
+            var canConnect = await context.Database.CanConnectAsync();
+            Console.WriteLine($"[Database Init] Can connect: {canConnect}");
+            
+            if (canConnect)
+            {
+                Console.WriteLine("[Database Init] Creating database schema...");
+                await context.Database.EnsureCreatedAsync();
+                Console.WriteLine("[Database Init] ✅ Database initialized successfully!");
+                dbInitialized = true;
+            }
+            else
+            {
+                Console.WriteLine("[Database Init] ⚠️  Cannot connect to database. Retrying...");
+                retryCount++;
+            }
+        }
+        catch (Exception ex)
+        {
+            retryCount++;
+            Console.WriteLine($"[Database Init] ❌ Error on attempt {retryCount}/{maxRetries}");
+            Console.WriteLine($"[Database Init] Error: {ex.Message}");
+            
+            if (retryCount >= maxRetries)
+            {
+                Console.WriteLine("[Database Init] ⚠️  Max retries reached. Database will be created on first API request.");
+            }
+        }
+    }
+});
+
 Console.WriteLine("[App Start] Calling app.Run()...");
 
 app.Run();
