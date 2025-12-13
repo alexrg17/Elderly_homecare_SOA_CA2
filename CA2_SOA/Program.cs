@@ -22,42 +22,68 @@ var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL"); // Railway
 var azurePostgresConnection = builder.Configuration.GetConnectionString("AzurePostgres");
 var useAzureDatabase = builder.Configuration.GetValue<bool>("UseAzureDatabase");
 
+Console.WriteLine("========================================");
+Console.WriteLine("[Startup] Elderly Care Home API Starting");
 Console.WriteLine($"[Startup] DATABASE_URL present: {!string.IsNullOrEmpty(databaseUrl)}");
 Console.WriteLine($"[Startup] PORT: {Environment.GetEnvironmentVariable("PORT") ?? "5000"}");
+Console.WriteLine($"[Startup] Environment: {builder.Environment.EnvironmentName}");
+Console.WriteLine("========================================");
 
-builder.Services.AddDbContext<CareHomeDbContext>(options =>
+builder.Services.AddDbContext<CareHomeDbContext>((serviceProvider, options) =>
 {
     try
     {
         if (!string.IsNullOrEmpty(databaseUrl))
         {
-            Console.WriteLine("[Startup] Configuring Railway PostgreSQL...");
+            Console.WriteLine("[Database] Configuring Railway PostgreSQL...");
             // Railway PostgreSQL - convert DATABASE_URL to proper connection string
             var databaseUri = new Uri(databaseUrl);
             var userInfo = databaseUri.UserInfo.Split(':');
             var connectionString = $"Host={databaseUri.Host};Port={databaseUri.Port};Database={databaseUri.AbsolutePath.Trim('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
             options.UseNpgsql(connectionString);
-            Console.WriteLine("[Startup] PostgreSQL configured successfully");
+            Console.WriteLine("[Database] ✅ PostgreSQL configured successfully");
         }
         else if (useAzureDatabase && !string.IsNullOrEmpty(azurePostgresConnection))
         {
-            Console.WriteLine("[Startup] Configuring Azure PostgreSQL...");
-            // Azure PostgreSQL
+            Console.WriteLine("[Database] Configuring Azure PostgreSQL...");
             options.UseNpgsql(azurePostgresConnection);
+            Console.WriteLine("[Database] ✅ Azure PostgreSQL configured successfully");
         }
         else
         {
-            Console.WriteLine("[Startup] Using SQLite (local development)...");
-            // Local SQLite
-            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+            Console.WriteLine("[Database] ⚠️  No DATABASE_URL found - using SQLite fallback");
+            Console.WriteLine("[Database] Note: SQLite data will not persist between deployments on Railway");
+            // Fallback to SQLite with in-memory if file system is not writable
+            var sqliteConnection = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=CareHomeDB.db";
+            options.UseSqlite(sqliteConnection);
+            Console.WriteLine("[Database] ✅ SQLite configured");
+        }
+        
+        // Enable sensitive data logging in development
+        if (builder.Environment.IsDevelopment())
+        {
+            options.EnableSensitiveDataLogging();
+            options.EnableDetailedErrors();
         }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[Startup ERROR] Database configuration failed: {ex.Message}");
-        Console.WriteLine($"[Startup] Falling back to SQLite...");
-        // Fallback to SQLite if anything fails
-        options.UseSqlite("Data Source=CareHomeDB.db");
+        Console.WriteLine($"[Database] ❌ ERROR: Database configuration failed!");
+        Console.WriteLine($"[Database] Error: {ex.Message}");
+        Console.WriteLine($"[Database] Stack: {ex.StackTrace}");
+        Console.WriteLine($"[Database] Falling back to SQLite...");
+        
+        // Final fallback to SQLite
+        try
+        {
+            options.UseSqlite("Data Source=CareHomeDB.db");
+            Console.WriteLine("[Database] ✅ SQLite fallback configured");
+        }
+        catch (Exception fallbackEx)
+        {
+            Console.WriteLine($"[Database] ❌ CRITICAL: Even SQLite fallback failed: {fallbackEx.Message}");
+            throw;
+        }
     }
 });
 
