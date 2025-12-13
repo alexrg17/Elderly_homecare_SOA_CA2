@@ -2,6 +2,10 @@
 
 A complete web application for managing elderly care homes, including a REST API backend and a React dashboard. The system helps staff monitor residents, manage rooms, track environmental sensors, and respond to alerts.
 
+## 🌐 Live Deployment
+- **Dashboard (React):** https://secure-comfort-production-8560.up.railway.app/
+- **Backend API (ASP.NET Core):** https://elderlyhomecaresoaca2-production.up.railway.app
+
 ## 📋 What Is This Project?
 
 This is a full-stack care home management system built for my Service Oriented Architecture course assignment. It consists of:
