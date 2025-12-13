@@ -1,7 +1,7 @@
 [phases.setup]
 # Use specific .NET 8 version instead of preview
 nixPkgs = ["dotnet-sdk_8"]
-aptPkgs = ["wget", "libicu70"]
+aptPkgs = ["wget", "libicu74"]
 
 [phases.install]
 cmds = [
