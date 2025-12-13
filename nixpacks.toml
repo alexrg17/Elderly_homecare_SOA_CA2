@@ -1,21 +1,18 @@
 [phases.setup]
-# Use specific .NET 8 version instead of preview
-nixPkgs = ["dotnet-sdk_8"]
+# Install required packages only
 aptPkgs = ["wget", "libicu74"]
 
 [phases.install]
 cmds = [
   "wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh",
   "chmod +x dotnet-install.sh",
-  "./dotnet-install.sh --channel 8.0 --install-dir /usr/share/dotnet",
-  "export PATH=$PATH:/usr/share/dotnet",
-  "export DOTNET_ROOT=/usr/share/dotnet",
-  "cd CA2_SOA && /usr/share/dotnet/dotnet restore"
+  "./dotnet-install.sh --channel 8.0 --install-dir /opt/dotnet",
+  "cd CA2_SOA && /opt/dotnet/dotnet restore"
 ]
 
 [phases.build]
-cmds = ["cd CA2_SOA && /usr/share/dotnet/dotnet publish --configuration Release --output ../out"]
+cmds = ["cd CA2_SOA && /opt/dotnet/dotnet publish --configuration Release --output ../out --self-contained false --no-restore"]
 
 [start]
-cmd = "cd out && /usr/share/dotnet/dotnet CA2_SOA.dll"
+cmd = "cd out && /opt/dotnet/dotnet CA2_SOA.dll"
 
