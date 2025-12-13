@@ -61,6 +61,9 @@ public class CareHomeDbContext : DbContext
     
     private void SeedData(ModelBuilder modelBuilder)
     {
+        // Use fixed UTC datetime for seed data (PostgreSQL requires UTC timestamps)
+        var seedDate = new DateTime(2025, 12, 9, 19, 27, 22, DateTimeKind.Utc);
+        
         // Seed default admin user (password: Admin123!)
         modelBuilder.Entity<User>().HasData(
             new User
@@ -71,7 +74,7 @@ public class CareHomeDbContext : DbContext
                 FullName = "System Administrator",
                 Email = "admin@carehome.com",
                 Role = "Admin",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = seedDate,
                 IsActive = true
             },
             new User
@@ -82,7 +85,7 @@ public class CareHomeDbContext : DbContext
                 FullName = "John Smith",
                 Email = "john.smith@carehome.com",
                 Role = "Caretaker",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = seedDate,
                 IsActive = true
             }
         );
@@ -97,7 +100,7 @@ public class CareHomeDbContext : DbContext
                 Floor = "1st Floor",
                 Capacity = 1,
                 IsOccupied = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = seedDate
             },
             new Room
             {
@@ -107,7 +110,7 @@ public class CareHomeDbContext : DbContext
                 Floor = "1st Floor",
                 Capacity = 2,
                 IsOccupied = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = seedDate
             },
             new Room
             {
@@ -117,7 +120,7 @@ public class CareHomeDbContext : DbContext
                 Floor = "2nd Floor",
                 Capacity = 1,
                 IsOccupied = false,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = seedDate
             }
         );
         
@@ -159,7 +162,7 @@ public class CareHomeDbContext : DbContext
                 RoomId = 1,
                 Temperature = 21.5m,
                 Humidity = 45.0m,
-                Timestamp = DateTime.UtcNow.AddHours(-2),
+                Timestamp = seedDate.AddHours(-2),
                 SensorType = "DHT22"
             },
             new SensorData
@@ -168,7 +171,7 @@ public class CareHomeDbContext : DbContext
                 RoomId = 2,
                 Temperature = 22.0m,
                 Humidity = 48.0m,
-                Timestamp = DateTime.UtcNow.AddHours(-2),
+                Timestamp = seedDate.AddHours(-2),
                 SensorType = "DHT22"
             },
             new SensorData
@@ -177,7 +180,7 @@ public class CareHomeDbContext : DbContext
                 RoomId = 1,
                 Temperature = 21.8m,
                 Humidity = 46.0m,
-                Timestamp = DateTime.UtcNow.AddHours(-1),
+                Timestamp = seedDate.AddHours(-1),
                 SensorType = "DHT22"
             }
         );
@@ -191,7 +194,7 @@ public class CareHomeDbContext : DbContext
                 AlertType = "Temperature",
                 Severity = "Low",
                 Message = "Room temperature slightly below optimal range (21.5°C)",
-                CreatedAt = DateTime.UtcNow.AddHours(-1),
+                CreatedAt = seedDate.AddHours(-1),
                 IsResolved = false
             }
         );
