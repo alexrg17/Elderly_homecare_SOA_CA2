@@ -19,25 +19,42 @@ var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL"); // Railway
 var azurePostgresConnection = builder.Configuration.GetConnectionString("AzurePostgres");
 var useAzureDatabase = builder.Configuration.GetValue<bool>("UseAzureDatabase");
 
+Console.WriteLine($"[Startup] DATABASE_URL present: {!string.IsNullOrEmpty(databaseUrl)}");
+Console.WriteLine($"[Startup] PORT: {Environment.GetEnvironmentVariable("PORT") ?? "5000"}");
+
 builder.Services.AddDbContext<CareHomeDbContext>(options =>
 {
-    if (!string.IsNullOrEmpty(databaseUrl))
+    try
     {
-        // Railway PostgreSQL - convert DATABASE_URL to proper connection string
-        var databaseUri = new Uri(databaseUrl);
-        var userInfo = databaseUri.UserInfo.Split(':');
-        var connectionString = $"Host={databaseUri.Host};Port={databaseUri.Port};Database={databaseUri.AbsolutePath.Trim('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
-        options.UseNpgsql(connectionString);
+        if (!string.IsNullOrEmpty(databaseUrl))
+        {
+            Console.WriteLine("[Startup] Configuring Railway PostgreSQL...");
+            // Railway PostgreSQL - convert DATABASE_URL to proper connection string
+            var databaseUri = new Uri(databaseUrl);
+            var userInfo = databaseUri.UserInfo.Split(':');
+            var connectionString = $"Host={databaseUri.Host};Port={databaseUri.Port};Database={databaseUri.AbsolutePath.Trim('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+            options.UseNpgsql(connectionString);
+            Console.WriteLine("[Startup] PostgreSQL configured successfully");
+        }
+        else if (useAzureDatabase && !string.IsNullOrEmpty(azurePostgresConnection))
+        {
+            Console.WriteLine("[Startup] Configuring Azure PostgreSQL...");
+            // Azure PostgreSQL
+            options.UseNpgsql(azurePostgresConnection);
+        }
+        else
+        {
+            Console.WriteLine("[Startup] Using SQLite (local development)...");
+            // Local SQLite
+            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+        }
     }
-    else if (useAzureDatabase && !string.IsNullOrEmpty(azurePostgresConnection))
+    catch (Exception ex)
     {
-        // Azure PostgreSQL
-        options.UseNpgsql(azurePostgresConnection);
-    }
-    else
-    {
-        // Local SQLite
-        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+        Console.WriteLine($"[Startup ERROR] Database configuration failed: {ex.Message}");
+        Console.WriteLine($"[Startup] Falling back to SQLite...");
+        // Fallback to SQLite if anything fails
+        options.UseSqlite("Data Source=CareHomeDB.db");
     }
 });
 
