@@ -10,9 +10,12 @@ using CA2_SOA.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Railway PORT if available
+// Configure to listen on Railway's PORT or default to 5000
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(int.Parse(port));
+});
 
 // Add Database Context - Use PostgreSQL in cloud (Railway/Azure), SQLite locally
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL"); // Railway PostgreSQL
