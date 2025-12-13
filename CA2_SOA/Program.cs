@@ -10,12 +10,8 @@ using CA2_SOA.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure to listen on Railway's PORT or default to 5000
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-builder.WebHost.ConfigureKestrel(serverOptions =>
-{
-    serverOptions.ListenAnyIP(int.Parse(port));
-});
+// ASP.NET Core will automatically use the PORT environment variable
+// No need to manually configure Kestrel - Railway sets ASPNETCORE_URLS automatically
 
 // Add Database Context - Use Railway PostgreSQL in production, SQLite locally
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL"); // Railway PostgreSQL
