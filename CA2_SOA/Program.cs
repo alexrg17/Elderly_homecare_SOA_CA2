@@ -29,20 +29,38 @@ Console.WriteLine($"[Startup] PORT: {Environment.GetEnvironmentVariable("PORT") 
 Console.WriteLine($"[Startup] Environment: {builder.Environment.EnvironmentName}");
 Console.WriteLine("========================================");
 
-builder.Services.AddDbContext<CareHomeDbContext>((serviceProvider, options) =>
+try
 {
-    try
+    builder.Services.AddDbContext<CareHomeDbContext>((serviceProvider, options) =>
     {
-        if (!string.IsNullOrEmpty(databaseUrl))
+        try
         {
-            Console.WriteLine("[Database] Configuring Railway PostgreSQL...");
-            // Railway PostgreSQL - convert DATABASE_URL to proper connection string
-            var databaseUri = new Uri(databaseUrl);
-            var userInfo = databaseUri.UserInfo.Split(':');
-            var connectionString = $"Host={databaseUri.Host};Port={databaseUri.Port};Database={databaseUri.AbsolutePath.Trim('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
-            options.UseNpgsql(connectionString);
-            Console.WriteLine("[Database] ✅ PostgreSQL configured successfully");
-        }
+            if (!string.IsNullOrEmpty(databaseUrl))
+            {
+                Console.WriteLine("[Database] Configuring Railway PostgreSQL...");
+                Console.WriteLine($"[Database] DATABASE_URL format: {databaseUrl.Substring(0, Math.Min(30, databaseUrl.Length))}...");
+                
+                // Railway PostgreSQL - convert DATABASE_URL to proper connection string
+                var databaseUri = new Uri(databaseUrl);
+                var userInfo = databaseUri.UserInfo?.Split(':');
+                
+                if (userInfo == null || userInfo.Length < 2)
+                {
+                    throw new Exception("DATABASE_URL does not contain valid user credentials");
+                }
+                
+                var database = databaseUri.AbsolutePath.Trim('/');
+                if (string.IsNullOrEmpty(database))
+                {
+                    throw new Exception("DATABASE_URL does not contain a database name");
+                }
+                
+                var connectionString = $"Host={databaseUri.Host};Port={databaseUri.Port};Database={database};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+                Console.WriteLine($"[Database] Parsed - Host: {databaseUri.Host}, Port: {databaseUri.Port}, DB: {database}");
+                
+                options.UseNpgsql(connectionString);
+                Console.WriteLine("[Database] ✅ PostgreSQL configured successfully");
+            }
         else if (useAzureDatabase && !string.IsNullOrEmpty(azurePostgresConnection))
         {
             Console.WriteLine("[Database] Configuring Azure PostgreSQL...");
@@ -65,27 +83,50 @@ builder.Services.AddDbContext<CareHomeDbContext>((serviceProvider, options) =>
             options.EnableSensitiveDataLogging();
             options.EnableDetailedErrors();
         }
-    }
-    catch (Exception ex)
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Database] ❌ ERROR: Database configuration failed!");
+            Console.WriteLine($"[Database] Error Type: {ex.GetType().Name}");
+            Console.WriteLine($"[Database] Error Message: {ex.Message}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"[Database] Inner Error: {ex.InnerException.Message}");
+            }
+            Console.WriteLine($"[Database] Falling back to SQLite...");
+            
+            // Final fallback to SQLite
+            try
+            {
+                options.UseSqlite("Data Source=CareHomeDB.db");
+                Console.WriteLine("[Database] ✅ SQLite fallback configured");
+            }
+            catch (Exception fallbackEx)
+            {
+                Console.WriteLine($"[Database] ❌ CRITICAL: Even SQLite fallback failed: {fallbackEx.Message}");
+                throw;
+            }
+        }
+    });
+    Console.WriteLine("[Startup] ✅ DbContext registration completed");
+}
+catch (Exception startupEx)
+{
+    Console.WriteLine("========================================");
+    Console.WriteLine("[CRITICAL ERROR] Failed to register DbContext!");
+    Console.WriteLine($"Error Type: {startupEx.GetType().Name}");
+    Console.WriteLine($"Error: {startupEx.Message}");
+    Console.WriteLine($"Stack: {startupEx.StackTrace}");
+    Console.WriteLine("========================================");
+    
+    // Register a fallback SQLite DbContext
+    Console.WriteLine("[Startup] Attempting emergency SQLite fallback...");
+    builder.Services.AddDbContext<CareHomeDbContext>(options =>
     {
-        Console.WriteLine($"[Database] ❌ ERROR: Database configuration failed!");
-        Console.WriteLine($"[Database] Error: {ex.Message}");
-        Console.WriteLine($"[Database] Stack: {ex.StackTrace}");
-        Console.WriteLine($"[Database] Falling back to SQLite...");
-        
-        // Final fallback to SQLite
-        try
-        {
-            options.UseSqlite("Data Source=CareHomeDB.db");
-            Console.WriteLine("[Database] ✅ SQLite fallback configured");
-        }
-        catch (Exception fallbackEx)
-        {
-            Console.WriteLine($"[Database] ❌ CRITICAL: Even SQLite fallback failed: {fallbackEx.Message}");
-            throw;
-        }
-    }
-});
+        options.UseSqlite("Data Source=CareHomeDB.db");
+    });
+    Console.WriteLine("[Startup] ✅ Emergency SQLite DbContext registered");
+}
 
 // Add Controllers
 builder.Services.AddControllers();
