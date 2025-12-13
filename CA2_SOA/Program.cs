@@ -120,60 +120,137 @@ catch (Exception startupEx)
 }
 
 // Add Controllers
-builder.Services.AddControllers();
+Console.WriteLine("[Service Registration] Adding Controllers...");
+try
+{
+    builder.Services.AddControllers();
+    Console.WriteLine("[Service Registration] ✅ Controllers added");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Service Registration] ❌ Controllers failed: {ex.Message}");
+    throw;
+}
+
+// Configure Host to not validate scopes on startup (prevents database connection during startup)
+Console.WriteLine("[Service Registration] Configuring service provider validation...");
+try
+{
+    builder.Host.UseDefaultServiceProvider(options =>
+    {
+        options.ValidateScopes = false;
+        options.ValidateOnBuild = false;
+    });
+    Console.WriteLine("[Service Registration] ✅ Service provider configured");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Service Registration] ❌ Service provider config failed: {ex.Message}");
+    throw;
+}
 
 // Add CORS
-builder.Services.AddCors(options =>
+Console.WriteLine("[Service Registration] Adding CORS...");
+try
 {
-    options.AddPolicy("AllowAll", policy =>
+    builder.Services.AddCors(options =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        options.AddPolicy("AllowAll", policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
     });
-});
+    Console.WriteLine("[Service Registration] ✅ CORS added");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Service Registration] ❌ CORS failed: {ex.Message}");
+    throw;
+}
 
 // Register Repositories (Dependency Injection for Separation of Concerns)
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IRoomRepository, RoomRepository>();
-builder.Services.AddScoped<IResidentRepository, ResidentRepository>();
-builder.Services.AddScoped<ISensorDataRepository, SensorDataRepository>();
-builder.Services.AddScoped<IAlertRepository, AlertRepository>();
+Console.WriteLine("[Service Registration] Registering repositories...");
+try
+{
+    builder.Services.AddScoped<IUserRepository, UserRepository>();
+    Console.WriteLine("[Service Registration]   ✅ UserRepository");
+    builder.Services.AddScoped<IRoomRepository, RoomRepository>();
+    Console.WriteLine("[Service Registration]   ✅ RoomRepository");
+    builder.Services.AddScoped<IResidentRepository, ResidentRepository>();
+    Console.WriteLine("[Service Registration]   ✅ ResidentRepository");
+    builder.Services.AddScoped<ISensorDataRepository, SensorDataRepository>();
+    Console.WriteLine("[Service Registration]   ✅ SensorDataRepository");
+    builder.Services.AddScoped<IAlertRepository, AlertRepository>();
+    Console.WriteLine("[Service Registration]   ✅ AlertRepository");
+    Console.WriteLine("[Service Registration] ✅ All repositories registered");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Service Registration] ❌ Repository registration failed: {ex.Message}");
+    throw;
+}
 
 // Register Services
-builder.Services.AddScoped<JwtService>();
-builder.Services.AddScoped<AuthService>();
+Console.WriteLine("[Service Registration] Registering services...");
+try
+{
+    builder.Services.AddScoped<JwtService>();
+    Console.WriteLine("[Service Registration]   ✅ JwtService");
+    builder.Services.AddScoped<AuthService>();
+    Console.WriteLine("[Service Registration]   ✅ AuthService");
+    Console.WriteLine("[Service Registration] ✅ All services registered");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Service Registration] ❌ Service registration failed: {ex.Message}");
+    throw;
+}
 
 // Configure JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLongForJWT!";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "CareHomeAPI";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "CareHomeClient";
+Console.WriteLine("[Service Registration] Configuring JWT Authentication...");
+try
+{
+    var jwtKey = builder.Configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLongForJWT!";
+    var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "CareHomeAPI";
+    var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "CareHomeClient";
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+    builder.Services.AddAuthentication(options =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtIssuer,
-        ValidAudience = jwtAudience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-        ClockSkew = TimeSpan.Zero
-    };
-});
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
 
-builder.Services.AddAuthorization();
+    builder.Services.AddAuthorization();
+    Console.WriteLine("[Service Registration] ✅ JWT Authentication configured");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Service Registration] ❌ JWT Authentication failed: {ex.Message}");
+    throw;
+}
 
 // Configure Swagger/OpenAPI with JWT support
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
+Console.WriteLine("[Service Registration] Configuring Swagger...");
+try
+{
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
@@ -211,18 +288,44 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
-});
+    });
+    Console.WriteLine("[Service Registration] ✅ Swagger configured");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Service Registration] ❌ Swagger configuration failed: {ex.Message}");
+    throw;
+}
+
+Console.WriteLine("========================================");
+Console.WriteLine("[App Build] Building application...");
+Console.WriteLine("========================================");
 
 var app = builder.Build();
 
+Console.WriteLine("========================================");
+Console.WriteLine("[App Build] ✅ Application built successfully!");
+Console.WriteLine("========================================");
+
 // Configure the HTTP request pipeline
+Console.WriteLine("[Middleware] Configuring HTTP request pipeline...");
+
 // Enable Swagger in all environments for easy testing and demonstration
-app.UseSwagger();
-app.UseSwaggerUI(options =>
+Console.WriteLine("[Middleware] Enabling Swagger...");
+try
 {
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Care Home API v1");
-    options.RoutePrefix = string.Empty; // Swagger UI at root
-});
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Care Home API v1");
+        options.RoutePrefix = string.Empty; // Swagger UI at root
+    });
+    Console.WriteLine("[Middleware] ✅ Swagger enabled");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Middleware] ❌ Swagger failed: {ex.Message}");
+}
 
 // Skip database initialization on startup - will be created lazily on first request
 // This prevents SSL certificate issues from crashing the app on startup
@@ -230,31 +333,55 @@ Console.WriteLine("[Database Init] Skipping startup database initialization");
 Console.WriteLine("[Database Init] Database will be created automatically on first API request");
 
 // Only use HTTPS redirection in production with proper certificates
+Console.WriteLine("[Middleware] Configuring HTTPS redirection...");
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
+    Console.WriteLine("[Middleware] ✅ HTTPS redirection enabled");
+}
+else
+{
+    Console.WriteLine("[Middleware] ⚠️  HTTPS redirection skipped (development mode)");
 }
 
+Console.WriteLine("[Middleware] Enabling CORS...");
 app.UseCors("AllowAll");
+Console.WriteLine("[Middleware] ✅ CORS enabled");
 
+Console.WriteLine("[Middleware] Enabling Authentication...");
 app.UseAuthentication(); // Important: Must be before UseAuthorization
-app.UseAuthorization();
+Console.WriteLine("[Middleware] ✅ Authentication enabled");
 
+Console.WriteLine("[Middleware] Enabling Authorization...");
+app.UseAuthorization();
+Console.WriteLine("[Middleware] ✅ Authorization enabled");
+
+Console.WriteLine("[Middleware] Mapping controllers...");
 app.MapControllers();
+Console.WriteLine("[Middleware] ✅ Controllers mapped");
 
 // Add health check endpoint
+Console.WriteLine("[Middleware] Adding health check endpoint...");
 app.MapGet("/health", () => Results.Ok(new { 
     status = "healthy", 
     timestamp = DateTime.UtcNow,
     environment = app.Environment.EnvironmentName 
 }));
+Console.WriteLine("[Middleware] ✅ Health check endpoint added");
 
+Console.WriteLine("[Middleware] Adding root redirect...");
 app.MapGet("/", () => Results.Redirect("/swagger"));
+Console.WriteLine("[Middleware] ✅ Root redirect added");
 
-Console.WriteLine("🏥 Elderly Care Home Monitoring API is starting...");
+Console.WriteLine("========================================");
+Console.WriteLine("🏥 Elderly Care Home Monitoring API");
 Console.WriteLine($"📖 Environment: {app.Environment.EnvironmentName}");
 Console.WriteLine($"🔐 Default Admin - Username: admin, Password: admin123");
-Console.WriteLine("✅ Application started successfully!");
+Console.WriteLine("✅ All services configured successfully!");
+Console.WriteLine("========================================");
+Console.WriteLine("[App Start] Calling app.Run()...");
 
 app.Run();
+
+Console.WriteLine("[App Start] ⚠️  app.Run() returned (this should never happen)");
 
