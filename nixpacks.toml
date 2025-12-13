@@ -1,12 +1,20 @@
 [phases.setup]
+# Use specific .NET 8 version instead of preview
 nixPkgs = ["dotnet-sdk_8"]
+aptPkgs = ["wget"]
 
 [phases.install]
-cmds = ["cd CA2_SOA && dotnet restore"]
+cmds = [
+  "wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh",
+  "chmod +x dotnet-install.sh",
+  "./dotnet-install.sh --channel 8.0 --install-dir /usr/share/dotnet",
+  "export PATH=$PATH:/usr/share/dotnet",
+  "cd CA2_SOA && /usr/share/dotnet/dotnet restore"
+]
 
 [phases.build]
-cmds = ["cd CA2_SOA && dotnet publish --configuration Release --output ../out"]
+cmds = ["cd CA2_SOA && /usr/share/dotnet/dotnet publish --configuration Release --output ../out"]
 
 [start]
-cmd = "cd out && dotnet CA2_SOA.dll --urls=http://0.0.0.0:$PORT"
+cmd = "cd out && /usr/share/dotnet/dotnet CA2_SOA.dll"
 
