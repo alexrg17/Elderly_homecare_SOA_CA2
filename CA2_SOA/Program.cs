@@ -17,10 +17,8 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
     serverOptions.ListenAnyIP(int.Parse(port));
 });
 
-// Add Database Context - Use PostgreSQL in cloud (Railway/Azure), SQLite locally
+// Add Database Context - Use Railway PostgreSQL in production, SQLite locally
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL"); // Railway PostgreSQL
-var azurePostgresConnection = builder.Configuration.GetConnectionString("AzurePostgres");
-var useAzureDatabase = builder.Configuration.GetValue<bool>("UseAzureDatabase");
 
 Console.WriteLine("========================================");
 Console.WriteLine("[Startup] Elderly Care Home API Starting");
@@ -44,7 +42,7 @@ try
                 var databaseUri = new Uri(databaseUrl);
                 var userInfo = databaseUri.UserInfo.Split(':');
                 
-                if (userInfo == null || userInfo.Length < 2)
+                if (userInfo.Length < 2)
                 {
                     throw new Exception("DATABASE_URL does not contain valid user credentials");
                 }
@@ -55,23 +53,16 @@ try
                     throw new Exception("DATABASE_URL does not contain a database name");
                 }
                 
-                var connectionString = $"Host={databaseUri.Host};Port={databaseUri.Port};Database={database};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+                var connectionString = $"Host={databaseUri.Host};Port={databaseUri.Port};Database={database};Username={userInfo[0]};Password={userInfo[1]};Pooling=true;SSL Mode=Prefer;Trust Server Certificate=true;Include Error Detail=true";
                 Console.WriteLine($"[Database] Parsed - Host: {databaseUri.Host}, Port: {databaseUri.Port}, DB: {database}");
                 
                 options.UseNpgsql(connectionString);
                 Console.WriteLine("[Database] ✅ PostgreSQL configured successfully");
             }
-            else if (useAzureDatabase && !string.IsNullOrEmpty(azurePostgresConnection))
-            {
-                Console.WriteLine("[Database] Configuring Azure PostgreSQL...");
-                options.UseNpgsql(azurePostgresConnection);
-                Console.WriteLine("[Database] ✅ Azure PostgreSQL configured successfully");
-            }
             else
             {
                 Console.WriteLine("[Database] ⚠️  No DATABASE_URL found - using SQLite fallback");
-                Console.WriteLine("[Database] Note: SQLite data will not persist between deployments on Railway");
-                // Fallback to SQLite with in-memory if file system is not writable
+                Console.WriteLine("[Database] Note: SQLite data will not persist between deployments");
                 var sqliteConnection = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=CareHomeDB.db";
                 options.UseSqlite(sqliteConnection);
                 Console.WriteLine("[Database] ✅ SQLite configured");
@@ -233,55 +224,10 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = string.Empty; // Swagger UI at root
 });
 
-// Initialize Database with comprehensive error handling
-Console.WriteLine("[Database Init] Starting database initialization...");
-try
-{
-    using var scope = app.Services.CreateScope();
-    var services = scope.ServiceProvider;
-    
-    try
-    {
-        Console.WriteLine("[Database Init] Getting DbContext...");
-        var context = services.GetRequiredService<CareHomeDbContext>();
-        
-        Console.WriteLine("[Database Init] Testing database connection...");
-        // Test if we can connect to the database
-        var canConnect = context.Database.CanConnect();
-        Console.WriteLine($"[Database Init] Can connect: {canConnect}");
-        
-        if (canConnect)
-        {
-            Console.WriteLine("[Database Init] Ensuring database is created...");
-            // Ensure database is created and migrations are applied
-            context.Database.EnsureCreated();
-            Console.WriteLine("[Database Init] ✅ Database initialized successfully!");
-        }
-        else
-        {
-            Console.WriteLine("[Database Init] ⚠️  Cannot connect to database. App will start without database initialization.");
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[Database Init] ❌ ERROR during database initialization!");
-        Console.WriteLine($"[Database Init] Error Type: {ex.GetType().Name}");
-        Console.WriteLine($"[Database Init] Error Message: {ex.Message}");
-        if (ex.InnerException != null)
-        {
-            Console.WriteLine($"[Database Init] Inner Exception: {ex.InnerException.Message}");
-        }
-        Console.WriteLine("[Database Init] ⚠️  Application will continue without database initialization.");
-        Console.WriteLine("[Database Init] Database will be created on first request.");
-    }
-}
-catch (Exception criticalEx)
-{
-    Console.WriteLine($"[Database Init] ❌ CRITICAL ERROR: Failed to create service scope!");
-    Console.WriteLine($"[Database Init] Error: {criticalEx.Message}");
-    Console.WriteLine("[Database Init] Application will continue, but database may not work correctly.");
-}
-Console.WriteLine("[Database Init] Initialization phase completed.");
+// Skip database initialization on startup - will be created lazily on first request
+// This prevents SSL certificate issues from crashing the app on startup
+Console.WriteLine("[Database Init] Skipping startup database initialization");
+Console.WriteLine("[Database Init] Database will be created automatically on first API request");
 
 // Only use HTTPS redirection in production with proper certificates
 if (!app.Environment.IsDevelopment())
