@@ -11,9 +11,4 @@ cmds = [
   "cd CA2_SOA && /opt/dotnet/dotnet restore"
 ]
 
-[phases.build]
-cmds = ["cd CA2_SOA && /opt/dotnet/dotnet publish --configuration Release --output ../out --self-contained false --no-restore"]
-
-[start]
-cmd = "cd out && /opt/dotnet/dotnet CA2_SOA.dll"
 
