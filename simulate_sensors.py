@@ -10,7 +10,9 @@ import time
 from datetime import datetime
 
 # API Configuration
-API_BASE_URL = "http://localhost:5000/api"
+# For local development, use: http://localhost:5000/api
+# For Railway cloud deployment, use: https://elderlyhomecaresoaca2-production.up.railway.app/api
+API_BASE_URL = "https://elderlyhomecaresoaca2-production.up.railway.app/api"
 USERNAME = "admin"
 PASSWORD = "Admin123!"
 
