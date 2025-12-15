@@ -106,6 +106,8 @@ const Residents = () => {
     try {
       const submitData = {
         ...formData,
+        // Convert date from YYYY-MM-DD to ISO DateTime format (YYYY-MM-DDTHH:mm:ssZ)
+        dateOfBirth: formData.dateOfBirth ? `${formData.dateOfBirth}T00:00:00Z` : null,
         roomId: formData.roomId ? parseInt(formData.roomId) : null
       };
 
