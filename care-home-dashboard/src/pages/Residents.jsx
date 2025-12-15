@@ -111,6 +111,8 @@ const Residents = () => {
         roomId: formData.roomId ? parseInt(formData.roomId) : null
       };
 
+      console.log('[Resident Submit] Payload:', JSON.stringify(submitData, null, 2));
+
       if (editingResident) {
         await residentsService.update(editingResident.id, submitData);
       } else {
@@ -120,7 +122,14 @@ const Residents = () => {
       setShowModal(false);
       fetchData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to save resident');
+      console.error('[Resident Submit Error]', {
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        message: err.message,
+        fullError: err
+      });
+      alert(`Failed to save resident: ${err.response?.data?.message || err.response?.data?.title || err.message || 'Unknown error'}`);
     }
   };
 
